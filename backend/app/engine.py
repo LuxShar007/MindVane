@@ -4,6 +4,26 @@ from google import genai
 from google.genai import types
 from app.schemas import AnalysisResult, StressTrigger
 
+# Load .env file manually if it exists from potential relative directories
+env_paths = [
+    ".env",
+    "backend/.env",
+    os.path.join(os.path.dirname(__file__), "..", ".env"),
+    os.path.join(os.path.dirname(__file__), "..", "..", ".env")
+]
+for path in env_paths:
+    if os.path.exists(path):
+        try:
+            with open(path, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, v = line.split("=", 1)
+                        os.environ[k.strip()] = v.strip()
+            break
+        except Exception as e:
+            print(f"Warning: Failed to load .env from {path}: {e}")
+
 # Check if GEMINI_API_KEY is present in environment
 API_KEY = os.environ.get("GEMINI_API_KEY")
 
