@@ -6,28 +6,27 @@
 
 @layer base {
   body {
-    @apply bg-darkBg text-gray-300 antialiased selection:bg-accentPurple/30 selection:text-white font-sans;
-    background-color: #0d0d0d;
+    @apply bg-zinc-50 text-zinc-800 dark:bg-darkBg dark:text-gray-300 antialiased selection:bg-accentPurple/30 selection:text-white font-sans transition-colors duration-300;
   }
 }
 
-/* Custom Webkit Scrollbar for premium dark-mode feeling */
+/* Custom Webkit Scrollbar matching active theme context */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0d0d0d;
+  @apply bg-zinc-100 dark:bg-[#0d0d0d];
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #262626;
+  @apply bg-zinc-300 dark:bg-zinc-800;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  @apply bg-zinc-400 dark:bg-zinc-700;
 }
 
 /* Blinking scarlet glow for Crisis Mode */
@@ -54,3 +53,26 @@
 .neon-glow-magenta {
   text-shadow: 0 0 10px rgba(236, 72, 153, 0.5), 0 0 20px rgba(236, 72, 153, 0.2);
 }
+
+/* Decorative Background Grid & Radial Mesh */
+.bg-mesh-gradient {
+  background-image: 
+    radial-gradient(at 10% 20%, rgba(168, 85, 247, 0.04) 0px, transparent 50%),
+    radial-gradient(at 90% 80%, rgba(236, 72, 153, 0.04) 0px, transparent 50%);
+}
+
+.dark .bg-mesh-gradient {
+  background-image: 
+    radial-gradient(at 10% 20%, rgba(168, 85, 247, 0.12) 0px, transparent 50%),
+    radial-gradient(at 90% 80%, rgba(236, 72, 153, 0.08) 0px, transparent 50%);
+}
+
+.bg-dot-grid {
+  background-size: 24px 24px;
+  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+}
+
+.dark .bg-dot-grid {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+}
+

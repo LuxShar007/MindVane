@@ -11,7 +11,9 @@ import {
   RefreshCw,
   Heart,
   MessageSquare,
-  Smile
+  Smile,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 // Help lines for the crisis override popup
@@ -42,6 +44,22 @@ function App() {
   const [isLoadingChat, setIsLoadingChat] = useState(false);
   const [serverMode, setServerMode] = useState('Checking...');
   const [feedbackMsg, setFeedbackMsg] = useState('');
+  
+  // Theme Switch State
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    return saved ? saved === 'dark' : true;
+  });
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [darkMode]);
 
   const chatEndRef = useRef(null);
 
@@ -278,10 +296,10 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-darkBg text-gray-200 flex flex-col font-sans">
+    <div className="min-h-screen bg-zinc-50 dark:bg-darkBg text-zinc-800 dark:text-gray-200 flex flex-col font-sans transition-colors duration-300 bg-dot-grid bg-mesh-gradient relative">
       
       {/* 1. HEADER */}
-      <header className="border-b border-zinc-800 bg-[#0a0a0a]/90 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+      <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex items-center justify-between transition-colors duration-300">
         <div className="flex items-center space-x-3">
           <div className="p-2 bg-accentPurple/10 border border-accentPurple/30 rounded-xl">
             <Brain className="h-6 w-6 text-accentPurple animate-pulse" />
@@ -290,12 +308,20 @@ function App() {
             <h1 className="text-2xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-accentPurple to-accentMagenta inline neon-glow-purple">
               MindVane
             </h1>
-            <p className="text-xs text-zinc-500 font-medium">Burnout Tracker & Digital Companion for Exam Aspirants</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Burnout Tracker & Digital Companion for Exam Aspirants</p>
           </div>
         </div>
 
         <div className="flex items-center space-x-4">
-          <span className="text-xs bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-full text-zinc-400 font-mono hidden md:inline-block">
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className="p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all shadow-sm flex items-center justify-center hover:scale-105 active:scale-95"
+            aria-label="Toggle Theme"
+          >
+            {darkMode ? <Sun className="h-4 w-4 text-amber-500" /> : <Moon className="h-4 w-4 text-accentPurple" />}
+          </button>
+          
+          <span className="text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-3 py-1.5 rounded-full text-zinc-600 dark:text-zinc-400 font-mono hidden md:inline-block">
             {serverMode}
           </span>
           <span className="h-2 w-2 rounded-full bg-accentPurple animate-ping"></span>
@@ -309,12 +335,12 @@ function App() {
         <section className="lg:col-span-7 flex flex-col space-y-6">
           
           {/* Journal Form Card */}
-          <div className="bg-[#121212] border border-zinc-800/80 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+          <div className="bg-white dark:bg-[#121212] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl p-6 shadow-xl dark:shadow-2xl relative overflow-hidden transition-all duration-300 hover:shadow-accentPurple/5 dark:hover:shadow-accentPurple/5">
             <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
               <Compass className="w-40 h-40 text-accentPurple" />
             </div>
             
-            <h2 className="text-xl font-semibold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400 flex items-center gap-2">
+            <h2 className="text-xl font-semibold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-zinc-800 dark:from-white to-zinc-500 dark:to-zinc-400 flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-accentPurple" />
               Journal & Burnout Analyzer
             </h2>
@@ -324,7 +350,7 @@ function App() {
               <div className="space-y-2">
                 <label 
                   htmlFor="exam-select" 
-                  className="block text-xs font-semibold uppercase tracking-wider text-zinc-400"
+                  className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
                 >
                   Target Examination
                 </label>
@@ -332,7 +358,7 @@ function App() {
                   id="exam-select"
                   value={exam}
                   onChange={(e) => setExam(e.target.value)}
-                  className="w-full bg-[#18181b] border border-zinc-700/80 rounded-xl px-4 py-3 text-zinc-200 focus:outline-none focus:ring-2 focus:ring-accentPurple transition-all font-medium text-sm cursor-pointer"
+                  className="w-full bg-zinc-50 dark:bg-[#18181b] border border-zinc-200 dark:border-zinc-700/80 rounded-xl px-4 py-3 text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-accentPurple transition-all font-medium text-sm cursor-pointer"
                 >
                   <option value="JEE">JEE (Joint Entrance Examination)</option>
                   <option value="NEET">NEET (National Eligibility cum Entrance Test)</option>
@@ -347,10 +373,10 @@ function App() {
               <div className="space-y-2">
                 <label 
                   htmlFor="journal-textarea" 
-                  className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 flex justify-between"
+                  className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex justify-between"
                 >
                   <span>Write down your thoughts</span>
-                  <span className="text-zinc-500 normal-case font-normal">Express freely about syllabus, tests, health, sleep</span>
+                  <span className="text-zinc-400 dark:text-zinc-500 normal-case font-normal">Express freely about syllabus, tests, health, sleep</span>
                 </label>
                 <textarea
                   id="journal-textarea"
@@ -358,14 +384,14 @@ function App() {
                   onChange={(e) => setJournalText(e.target.value)}
                   placeholder="I'm feeling incredibly overwhelmed. My mock marks have dropped, there's a huge revision backlog in physics/biology, and I barely sleep more than 4 hours. I feel like I'm letting everyone down..."
                   rows={6}
-                  className="w-full bg-[#18181b] border border-zinc-700/80 rounded-xl p-4 text-zinc-200 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accentPurple transition-all font-light resize-none leading-relaxed text-sm"
+                  className="w-full bg-zinc-50 dark:bg-[#18181b] border border-zinc-200 dark:border-zinc-700/80 rounded-xl p-4 text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accentPurple transition-all font-light resize-none leading-relaxed text-sm"
                   required
                 />
               </div>
 
               {/* Submit Button & Spinners */}
               <div className="flex items-center justify-between pt-2">
-                <span className="text-[11px] text-zinc-500 italic">
+                <span className="text-[11px] text-zinc-500 dark:text-zinc-500 italic">
                   {feedbackMsg && `* ${feedbackMsg}`}
                 </span>
                 <button
@@ -396,13 +422,13 @@ function App() {
           >
             {!analysis ? (
               // Empty/Intro State
-              <div className="flex-1 bg-[#121212]/40 border border-dashed border-zinc-800 rounded-2xl p-8 flex flex-col items-center justify-center text-center space-y-4 min-h-[350px]">
-                <div className="p-4 bg-zinc-900/60 rounded-full border border-zinc-800">
-                  <Brain className="h-8 w-8 text-zinc-600" />
+              <div className="flex-1 bg-white/50 dark:bg-[#121212]/40 border border-dashed border-zinc-300 dark:border-zinc-800 rounded-2xl p-8 flex flex-col items-center justify-center text-center space-y-4 min-h-[350px] transition-colors duration-300">
+                <div className="p-4 bg-zinc-100 dark:bg-zinc-900/60 rounded-full border border-zinc-200 dark:border-zinc-800">
+                  <Brain className="h-8 w-8 text-zinc-400 dark:text-zinc-600" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-zinc-400">No Stress Analysis Active</h3>
-                  <p className="text-xs text-zinc-500 max-w-sm mt-1">
+                  <h3 className="text-base font-semibold text-zinc-700 dark:text-zinc-400">No Stress Analysis Active</h3>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-500 max-w-sm mt-1">
                     Fill out the journaling session above and hit "Analyze Stress Patterns" to parse your psychological workload, extract hidden stressors, and receive tailored advice.
                   </p>
                 </div>
@@ -410,32 +436,32 @@ function App() {
             ) : analysis.risk_flagged ? (
               
               /* 3. CRISIS OVERRIDE POPUP */
-              <div className="bg-red-950/40 border border-red-500/80 rounded-2xl p-6 md:p-8 animate-blink-scarlet shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+              <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-500/80 rounded-2xl p-6 md:p-8 animate-blink-scarlet shadow-lg dark:shadow-[0_0_30px_rgba(239,68,68,0.2)]">
                 <div className="flex items-start space-x-4">
-                  <div className="p-3 bg-red-600/20 border border-red-500/30 rounded-xl text-red-500">
+                  <div className="p-3 bg-red-600/10 dark:bg-red-600/20 border border-red-200 dark:border-red-500/30 rounded-xl text-red-500">
                     <AlertOctagon className="h-7 w-7 text-red-500 animate-bounce" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold tracking-tight text-red-500">Crisis Alert & Assistance Required</h3>
-                    <p className="text-xs text-zinc-400 mt-1">
+                    <h3 className="text-xl font-bold tracking-tight text-red-600 dark:text-red-500">Crisis Alert & Assistance Required</h3>
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
                       Our system detected critical indicators of emotional crisis and severe distress in your journal. Please pause preparation immediately and contact one of the free support options below. You do not have to carry this load alone.
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-6 space-y-3">
-                  <span className="block text-xs uppercase tracking-wider text-red-400 font-semibold">Immediate Student Support Helplines</span>
+                  <span className="block text-xs uppercase tracking-wider text-red-600 dark:text-red-400 font-semibold">Immediate Student Support Helplines</span>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {HELPLINES.map((line, idx) => (
-                      <div key={idx} className="bg-black/40 border border-red-900/40 rounded-xl p-3.5 flex flex-col justify-between">
+                      <div key={idx} className="bg-white dark:bg-black/40 border border-red-100 dark:border-red-900/40 rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
                         <div>
-                          <span className="block text-sm font-semibold text-zinc-100">{line.name}</span>
+                          <span className="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">{line.name}</span>
                           <span className="block text-[11px] text-zinc-500 mt-0.5">{line.hours}</span>
                         </div>
                         <a 
                           href={`tel:${line.number}`} 
-                          className="mt-3 flex items-center space-x-2 text-xs font-bold text-red-400 hover:text-red-300 transition-colors"
+                          className="mt-3 flex items-center space-x-2 text-xs font-bold text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 transition-colors"
                         >
                           <PhoneCall className="h-3.5 w-3.5" />
                           <span>{line.number}</span>
@@ -445,11 +471,11 @@ function App() {
                   </div>
                 </div>
 
-                <div className="mt-6 border-t border-red-950 pt-4 flex items-center justify-between text-xs text-red-400/70">
+                <div className="mt-6 border-t border-red-200 dark:border-red-950 pt-4 flex items-center justify-between text-xs text-red-500 dark:text-red-400/70">
                   <span>Free. Confidential. Available 24/7.</span>
                   <button 
                     onClick={() => setAnalysis(null)} 
-                    className="text-zinc-500 hover:text-zinc-300 underline font-medium"
+                    className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 underline font-medium"
                   >
                     Reset Dashboard
                   </button>
@@ -465,10 +491,10 @@ function App() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   
                   {/* Anxiety Meter */}
-                  <div className={`bg-[#121212] border ${getAnxietyColor(analysis.anxiety_score).border} rounded-2xl p-5 shadow-lg flex flex-col justify-between transition-all duration-500`}>
+                  <div className={`bg-white dark:bg-[#121212] border ${getAnxietyColor(analysis.anxiety_score).border} rounded-2xl p-5 shadow-lg flex flex-col justify-between transition-all duration-500`}>
                     <div>
                       <span className="text-xs uppercase tracking-wider text-zinc-500 font-bold block mb-1">Anxiety Index Meter</span>
-                      <h4 className="text-sm text-zinc-300 font-medium">Cognitive Stress Level</h4>
+                      <h4 className="text-sm text-zinc-800 dark:text-zinc-300 font-medium">Cognitive Stress Level</h4>
                     </div>
 
                     <div className="my-4 flex items-center justify-center relative">
@@ -478,7 +504,7 @@ function App() {
                           cx="64"
                           cy="64"
                           r="54"
-                          stroke="#1f2937"
+                          stroke={darkMode ? "#1f2937" : "#e4e4e7"}
                           strokeWidth="8"
                           fill="transparent"
                         />
@@ -504,7 +530,7 @@ function App() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-xs border-t border-zinc-800/80 pt-3">
+                    <div className="flex items-center justify-between text-xs border-t border-zinc-200 dark:border-zinc-800/80 pt-3">
                       <span className="text-zinc-500">Classification:</span>
                       <span className={`font-semibold ${getAnxietyColor(analysis.anxiety_score).text}`}>
                         {analysis.anxiety_score >= 75 ? 'Elevated Burden (Rose)' : analysis.anxiety_score >= 40 ? 'Moderate Burden (Amber)' : 'Stable Baseline (Emerald)'}
@@ -513,10 +539,10 @@ function App() {
                   </div>
 
                   {/* Primary Emotional Trends */}
-                  <div className="bg-[#121212] border border-zinc-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+                  <div className="bg-white dark:bg-[#121212] border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
                     <div>
                       <span className="text-xs uppercase tracking-wider text-zinc-500 font-bold block mb-1">Emotional Vectors</span>
-                      <h4 className="text-sm text-zinc-300 font-medium">Primary State Trends</h4>
+                      <h4 className="text-sm text-zinc-800 dark:text-zinc-300 font-medium">Primary State Trends</h4>
                     </div>
 
                     <div className="my-3 flex flex-wrap gap-2 content-center items-center flex-1">
@@ -531,7 +557,7 @@ function App() {
                       ))}
                     </div>
 
-                    <div className="border-t border-zinc-800/80 pt-3 text-[11px] text-zinc-500">
+                    <div className="border-t border-zinc-200 dark:border-zinc-800/80 pt-3 text-[11px] text-zinc-500">
                       Emotional states isolated from vocabulary frequency analysis.
                     </div>
                   </div>
@@ -539,13 +565,13 @@ function App() {
                 </div>
 
                 {/* Triggers Card */}
-                <div className="bg-[#121212] border border-zinc-800 rounded-2xl p-5 shadow-lg">
+                <div className="bg-white dark:bg-[#121212] border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-lg">
                   <span className="text-xs uppercase tracking-wider text-zinc-500 font-bold block mb-3">Hidden Stress Triggers</span>
                   
                   <ul className="space-y-3" role="list">
                     {analysis.stress_triggers.map((trig, idx) => (
-                      <li key={idx} className="flex items-center justify-between bg-black/30 border border-zinc-800/40 rounded-xl px-4 py-2.5">
-                        <span className="text-xs text-zinc-300 font-medium">{trig.trigger}</span>
+                      <li key={idx} className="flex items-center justify-between bg-zinc-50 dark:bg-black/30 border border-zinc-100 dark:border-zinc-800/40 rounded-xl px-4 py-2.5">
+                        <span className="text-xs text-zinc-700 dark:text-zinc-300 font-medium">{trig.trigger}</span>
                         <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${getImpactBadgeColor(trig.impact)}`}>
                           {trig.impact}
                         </span>
@@ -555,21 +581,21 @@ function App() {
                 </div>
 
                 {/* Adaptive Mindfulness Exercise Widget */}
-                <div className="bg-[#121212] border border-zinc-800 rounded-2xl p-5 shadow-lg flex items-start space-x-4">
+                <div className="bg-white dark:bg-[#121212] border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-lg flex items-start space-x-4">
                   <div className="p-3 bg-accentPurple/10 border border-accentPurple/30 rounded-xl text-accentPurple mt-0.5">
                     <Compass className="h-5 w-5 text-accentPurple" />
                   </div>
                   <div className="flex-1 space-y-1">
                     <span className="text-xs uppercase tracking-wider text-zinc-500 font-bold block">Adaptive Mindfulness Exercise</span>
-                    <h4 className="text-sm font-semibold text-zinc-200">Recommended Relief Protocol</h4>
-                    <p className="text-xs text-zinc-400 font-light leading-relaxed mt-1">{analysis.mindfulness_exercise}</p>
+                    <h4 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Recommended Relief Protocol</h4>
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400 font-light leading-relaxed mt-1">{analysis.mindfulness_exercise}</p>
                   </div>
                 </div>
 
                 {/* Empathetic Marquee */}
-                <div className="bg-[#121212] border border-zinc-800 rounded-2xl py-3 px-1 overflow-hidden shadow-lg relative">
-                  <div className="absolute top-0 bottom-0 left-0 w-8 bg-gradient-to-r from-[#121212] to-transparent z-10 pointer-events-none"></div>
-                  <div className="absolute top-0 bottom-0 right-0 w-8 bg-gradient-to-l from-[#121212] to-transparent z-10 pointer-events-none"></div>
+                <div className="bg-white dark:bg-[#121212] border border-zinc-200 dark:border-zinc-800 rounded-2xl py-3 px-1 overflow-hidden shadow-lg relative">
+                  <div className="absolute top-0 bottom-0 left-0 w-8 bg-gradient-to-r from-white dark:from-[#121212] to-transparent z-10 pointer-events-none"></div>
+                  <div className="absolute top-0 bottom-0 right-0 w-8 bg-gradient-to-l from-white dark:from-[#121212] to-transparent z-10 pointer-events-none"></div>
                   <div className="whitespace-nowrap flex overflow-hidden">
                     <div className="animate-marquee inline-block text-xs font-medium text-accentPurple select-none">
                       {analysis.encouragement} • Take deep breaths • You are more than a rank • Rest is also progress • Keep going gently •
@@ -582,12 +608,10 @@ function App() {
           </div>
 
         </section>
-
-        {/* RIGHT COLUMN: CONVERSATIONAL DIGITAL COMPANION (5 cols) */}
-        <section className="lg:col-span-5 bg-[#121212] border border-zinc-800/80 rounded-2xl flex flex-col shadow-2xl overflow-hidden min-h-[500px] lg:h-[calc(100vh-140px)]">
+        <section className="lg:col-span-5 bg-white dark:bg-[#121212] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl flex flex-col shadow-xl dark:shadow-2xl overflow-hidden min-h-[500px] lg:h-[calc(100vh-140px)] transition-all duration-300 hover:shadow-accentMagenta/5 dark:hover:shadow-accentMagenta/5">
           
           {/* Chat Header */}
-          <div className="px-5 py-4 border-b border-zinc-800/80 bg-[#151515]/60 flex items-center justify-between">
+          <div className="px-5 py-4 border-b border-zinc-200 dark:border-zinc-800/80 bg-zinc-50 dark:bg-[#151515]/60 flex items-center justify-between transition-colors duration-300">
             <div className="flex items-center space-x-3">
               <div className="p-1.5 bg-accentMagenta/10 border border-accentMagenta/30 rounded-lg text-accentMagenta">
                 <MessageSquare className="h-4 w-4 text-accentMagenta" />
@@ -596,19 +620,19 @@ function App() {
                 <h2 className="text-sm font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-accentMagenta to-accentPurple inline neon-glow-magenta">
                   Companion Chat
                 </h2>
-                <span className="block text-[10px] text-zinc-500">Real-time Psychological Support Companion</span>
+                <span className="block text-[10px] text-zinc-500 dark:text-zinc-500">Real-time Psychological Support Companion</span>
               </div>
             </div>
             
-            <div className="flex items-center space-x-1.5 bg-zinc-900 border border-zinc-800/80 rounded-full px-2.5 py-1">
+            <div className="flex items-center space-x-1.5 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/80 rounded-full px-2.5 py-1">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-              <span className="text-[10px] font-mono text-zinc-400 font-bold">ACTIVE</span>
+              <span className="text-[10px] font-mono text-zinc-600 dark:text-zinc-400 font-bold">ACTIVE</span>
             </div>
           </div>
 
           {/* Chat Messages Logs */}
           <div 
-            className="flex-1 overflow-y-auto p-4 space-y-4 bg-zinc-950/20"
+            className="flex-1 overflow-y-auto p-4 space-y-4 bg-zinc-50/50 dark:bg-zinc-950/20"
             role="log"
             aria-label="Conversation with companion"
           >
@@ -621,7 +645,7 @@ function App() {
                   className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs leading-relaxed transition-all shadow-md ${
                     msg.role === 'user' 
                       ? 'bg-gradient-to-r from-accentPurple to-accentMagenta text-white rounded-br-none' 
-                      : 'bg-[#18181b] border border-zinc-800/60 text-zinc-300 rounded-bl-none'
+                      : 'bg-zinc-100 dark:bg-[#18181b] border border-zinc-200 dark:border-zinc-800/60 text-zinc-800 dark:text-zinc-300 rounded-bl-none'
                   }`}
                 >
                   <p className="font-light whitespace-pre-wrap">{msg.content}</p>
@@ -632,13 +656,13 @@ function App() {
             {/* Simulated Chat Loader */}
             {isLoadingChat && (
               <div className="flex justify-start">
-                <div className="bg-[#18181b] border border-zinc-800/60 rounded-2xl rounded-bl-none px-4 py-3.5 flex items-center space-x-2">
+                <div className="bg-zinc-100 dark:bg-[#18181b] border border-zinc-200 dark:border-zinc-800/60 rounded-2xl rounded-bl-none px-4 py-3.5 flex items-center space-x-2">
                   <div className="flex space-x-1">
                     <span className="w-1.5 h-1.5 bg-accentMagenta rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
                     <span className="w-1.5 h-1.5 bg-accentPurple rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
                     <span className="w-1.5 h-1.5 bg-accentMagenta rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
                   </div>
-                  <span className="text-[10px] text-zinc-500 font-medium">Companion is writing...</span>
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-500 font-medium">Companion is writing...</span>
                 </div>
               </div>
             )}
@@ -649,7 +673,7 @@ function App() {
           {/* Chat Send Form */}
           <form 
             onSubmit={sendMessage} 
-            className="p-4 border-t border-zinc-800/80 bg-[#151515]/60 flex items-center space-x-2"
+            className="p-4 border-t border-zinc-200 dark:border-zinc-800/80 bg-zinc-50 dark:bg-[#151515]/60 flex items-center space-x-2 transition-colors duration-300"
           >
             <div className="flex-1 relative">
               <label htmlFor="chat-message-input" className="sr-only">Type your response to the companion</label>
@@ -659,11 +683,11 @@ function App() {
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 placeholder="Ask advice, express stress, or chat..."
-                className="w-full bg-[#1c1c1f] border border-zinc-800 rounded-xl pl-4 pr-10 py-3 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-accentMagenta transition-all font-light"
+                className="w-full bg-zinc-100 dark:bg-[#1c1c1f] border border-zinc-200 dark:border-zinc-800 rounded-xl pl-4 pr-10 py-3 text-xs text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-accentMagenta transition-all font-light"
                 required
                 disabled={isLoadingChat}
               />
-              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-600">
+              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-600">
                 <Smile className="h-4 w-4" />
               </div>
             </div>
@@ -682,14 +706,13 @@ function App() {
       </main>
 
       {/* 3. FOOTER */}
-      <footer className="border-t border-zinc-900 bg-black/60 py-4 px-6 text-center text-[10px] text-zinc-600 font-mono mt-auto flex flex-col sm:flex-row items-center justify-between gap-2 max-w-7xl w-full mx-auto">
+      <footer className="border-t border-zinc-200 dark:border-zinc-900 bg-white/60 dark:bg-black/60 py-4 px-6 text-center text-[10px] text-zinc-500 dark:text-zinc-600 font-mono mt-auto flex flex-col sm:flex-row items-center justify-between gap-2 max-w-7xl w-full mx-auto transition-colors duration-300">
         <p>© 2026 MindVane Micro-App. Created under Principal UI/UX accessibility guidelines.</p>
         <p className="flex items-center space-x-1.5">
           <Heart className="h-3 w-3 text-accentMagenta fill-accentMagenta" />
           <span>Prioritizing Exam Students' Mental Health.</span>
         </p>
       </footer>
-
     </div>
   );
 }
