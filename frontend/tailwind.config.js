@@ -8,9 +8,9 @@ export default {
   theme: {
     extend: {
       colors: {
-        darkBg: '#0d0d0d',
-        accentPurple: '#a855f7', // Neon Purple
-        accentMagenta: '#ec4899', // Magenta
+        darkBg: '#040d1a', // Twilight Midnight Blue
+        accentPurple: 'rgb(var(--color-primary) / <alpha-value>)', // Dynamic Twilight Blue
+        accentMagenta: 'rgb(var(--color-secondary) / <alpha-value>)', // Dynamic Sunset Orange
         accentEmerald: '#10b981', // Emerald Green for stable metrics
         accentAmber: '#f59e0b', // Amber for elevated stress
         scarletRed: '#dc2626', // Scarlet for alert
