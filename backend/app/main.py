@@ -1,16 +1,30 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from app.schemas import JournalInput, AnalysisResult, ChatInput, ChatResponse
-from app.security import sanitize_input_text, scan_for_crisis
-from app.engine import analyze_journal_with_gemini, chat_companion_with_gemini
-
-app = FastAPI(
-    title="MindVane API",
-    description="Backend API for MindVane mental health micro-app",
-    version="1.0.0"
+from pydantic import BaseModel, Field
+from app.schemas import (
+    JournalInput, 
+    BurnoutAnalysisResponse, 
+    DeclutterResponse,
+    ChatInput, 
+    ChatResponse,
+    AnalysisResult
+)
+from app.security import clean_payload_text, scan_for_crisis
+from app.engine import (
+    generate_burnout_analytics, 
+    generate_backlog_breakdown,
+    chat_companion_with_gemini,
+    analyze_journal_with_gemini
 )
 
-# Enable CORS for frontend compatibility (development and deployment hosts)
+# 1. Instantiate FastAPI application with explicit title and version
+app = FastAPI(
+    title="AntiGravity API",
+    description="Backend micro-service validating student cognitive analytics & companion logic",
+    version="2.0.0"
+)
+
+# 2. Configure CORSMiddleware allowing wildcard origin headers to prevent handshake failures
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,50 +33,97 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/_/backend/api/analyze-journal", response_model=AnalysisResult)
+# Pydantic input contract for declutter backlog route
+class BacklogInput(BaseModel):
+    exam: str = Field(..., description="Target exam path (e.g. JEE, NEET, BOARDS, UPSC)")
+    raw_backlog: str = Field(..., description="The student's raw backlog details to declutter")
+
+# 3. Expose POST route pointing to /api/analyze-journal
+@app.post("/api/analyze-journal", response_model=BurnoutAnalysisResponse)
 async def analyze_journal(payload: JournalInput):
     """
-    Sanitize journal text, run crisis triggers, and perform stress analysis.
+    Ingests exam state and journal text to yield deep burnout analytics.
     """
-    clean_text = sanitize_input_text(payload.journal_text)
-    clean_exam = sanitize_input_text(payload.exam)
+    # 5 & 6. Ingest string cleansing and validate input length parameters (throw HTTP 400 if blank)
+    cleaned_text = clean_payload_text(payload.journal_text)
+    cleaned_exam = clean_payload_text(payload.exam)
 
-    if not clean_text:
-        raise HTTPException(status_code=400, detail="Journal entry cannot be empty.")
+    if not cleaned_text or cleaned_text.isspace():
+        raise HTTPException(status_code=400, detail="Journal entry cannot be empty or purely whitespace.")
+    if not cleaned_exam or cleaned_exam.isspace():
+        raise HTTPException(status_code=400, detail="Exam track parameter cannot be empty or purely whitespace.")
 
-    # 1. Security Check: Crisis scanning
-    risk_flagged = scan_for_crisis(clean_text)
+    try:
+        return generate_burnout_analytics(cleaned_exam, cleaned_text)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Diagnostic analyzer execution failed: {str(e)}")
 
-    # 2. Process via Gemini SDK or Simulation
-    result = analyze_journal_with_gemini(clean_exam, clean_text, risk_flagged)
-    return result
+# Legacy support endpoint for previous frontend client configurations
+@app.post("/_/backend/api/analyze-journal", response_model=AnalysisResult)
+async def analyze_journal_legacy(payload: JournalInput):
+    """
+    Legacy endpoint mapping to standard frontend expected parameters.
+    """
+    cleaned_text = clean_payload_text(payload.journal_text)
+    cleaned_exam = clean_payload_text(payload.exam)
 
+    if not cleaned_text or cleaned_text.isspace():
+        raise HTTPException(status_code=400, detail="Journal entry cannot be empty or purely whitespace.")
+    if not cleaned_exam or cleaned_exam.isspace():
+        raise HTTPException(status_code=400, detail="Exam track parameter cannot be empty or purely whitespace.")
+
+    try:
+        return analyze_journal_with_gemini(cleaned_exam, cleaned_text)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Legacy analyzer execution failed: {str(e)}")
+
+# 4. Expose POST route pointing to /api/declutter-backlog (and legacy support)
+@app.post("/api/declutter-backlog", response_model=DeclutterResponse)
+@app.post("/_/backend/api/declutter-backlog", response_model=DeclutterResponse)
+async def declutter_backlog(payload: BacklogInput):
+    """
+    Ingests backlog text to output an atomic de-clutter study framework.
+    """
+    cleaned_backlog = clean_payload_text(payload.raw_backlog)
+    cleaned_exam = clean_payload_text(payload.exam)
+
+    if not cleaned_backlog or cleaned_backlog.isspace():
+        raise HTTPException(status_code=400, detail="Backlog description cannot be empty or purely whitespace.")
+    if not cleaned_exam or cleaned_exam.isspace():
+        raise HTTPException(status_code=400, detail="Exam track parameter cannot be empty or purely whitespace.")
+
+    try:
+        return generate_backlog_breakdown(cleaned_exam, cleaned_backlog)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Backlog breakdown execution failed: {str(e)}")
+
+# --- LEGACY WRAPPER ENDPOINTS ---
+# Exposing chat companion to ensure existing frontend React chatbot continues to operate
+@app.post("/api/chat-companion", response_model=ChatResponse)
 @app.post("/_/backend/api/chat-companion", response_model=ChatResponse)
 async def chat_companion(payload: ChatInput):
     """
-    Sanitize chat messages, extract history contexts, and respond empathetically.
+    Ingest user chat message and history to reply empathetically.
     """
-    clean_message = sanitize_input_text(payload.message)
-    if not clean_message:
-        raise HTTPException(status_code=400, detail="Chat message cannot be empty.")
+    cleaned_message = clean_payload_text(payload.message)
+    if not cleaned_message or cleaned_message.isspace():
+        raise HTTPException(status_code=400, detail="Chat message cannot be empty or purely whitespace.")
 
-    # Sanitize and bound history to the last 15 interactions for token efficiency
     sanitized_history = []
     recent_history = payload.history[-15:] if payload.history else []
     for h in recent_history:
         sanitized_history.append({
-            "role": sanitize_input_text(h.role),
-            "content": sanitize_input_text(h.content)
+            "role": clean_payload_text(h.role),
+            "content": clean_payload_text(h.content)
         })
 
-    # Deduce target exam from text context, defaulting to standard JEE
+    # Default to JEE context
     exam_context = "JEE"
-    search_context = clean_message.lower() + " " + " ".join([h["content"].lower() for h in sanitized_history])
+    search_context = cleaned_message.lower() + " " + " ".join([h["content"].lower() for h in sanitized_history])
     for exam in ["NEET", "CAT", "GATE", "UPSC", "BOARDS", "JEE"]:
         if exam.lower() in search_context or ("board" in search_context and exam == "BOARDS"):
             exam_context = exam
             break
 
-    # Get response from companion
-    reply = chat_companion_with_gemini(clean_message, sanitized_history, exam_context)
+    reply = chat_companion_with_gemini(cleaned_message, sanitized_history, exam_context)
     return ChatResponse(reply=reply)

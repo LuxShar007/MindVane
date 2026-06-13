@@ -132,3 +132,36 @@ def test_engine_generate_backlog_breakdown():
         assert step.task_name is not None
         assert step.estimated_minutes >= 0
         assert step.priority in ["High", "Medium", "Low"]
+
+def test_api_declutter_backlog():
+    """
+    Verify /api/declutter-backlog route returns structural declutter frameworks.
+    """
+    response = client.post(
+        "/api/declutter-backlog",
+        json={
+            "exam": "NEET",
+            "raw_backlog": "Need to revise genetics backlog, circular motion kinematics, and organic carbonyl chemistry."
+        }
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "reassurance" in data
+    assert 3 <= len(data["atomic_steps"]) <= 4
+    for step in data["atomic_steps"]:
+        assert "task_name" in step
+        assert step["estimated_minutes"] >= 0
+        assert step["priority"] in ["High", "Medium", "Low"]
+
+def test_api_declutter_backlog_empty_rejection():
+    """
+    Verify that blank backlog payload triggers HTTP 400 validation error.
+    """
+    response = client.post(
+        "/api/declutter-backlog",
+        json={
+            "exam": "JEE",
+            "raw_backlog": "    "
+        }
+    )
+    assert response.status_code == 400

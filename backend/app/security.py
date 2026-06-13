@@ -7,14 +7,19 @@ CRISIS_KEYWORDS = [
     "suicidal", "ending my life", "cut myself", "hang myself"
 ]
 
-def sanitize_input_text(text: str) -> str:
+def clean_payload_text(text: str) -> str:
     """
-    Sanitize text input by escaping HTML tags to prevent XSS injections.
+    Clean and sanitize text input by escaping HTML tags to prevent XSS injections.
     """
     if not text:
         return ""
-    # Escapes characters like <, >, &, ", and '
     return html.escape(text.strip())
+
+def sanitize_input_text(text: str) -> str:
+    """
+    Legacy wrapper for cleaning inputs.
+    """
+    return clean_payload_text(text)
 
 def scan_for_crisis(text: str) -> bool:
     """
