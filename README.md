@@ -32,6 +32,35 @@ MindVane/
 └── README.md                 # Root instructions layout (this file)
 ```
 
+### 🗺️ System Architecture & Data Flow
+
+```mermaid
+graph TD
+    User([Student / User]) <-->|Interacts (Journal, Chat)| FE[Vite + React Frontend]
+    FE -->|Requests: /_/backend/api/*| Vercel{Vercel Router}
+    
+    subgraph Frontend App
+        FE
+    end
+    
+    subgraph Vercel Cloud Routing
+        Vercel -->|RoutePrefix: /| FE
+        Vercel -->|RoutePrefix: /_/backend| BE[FastAPI Backend]
+    end
+
+    subgraph FastAPI Backend App
+        BE -->|1. Sanitization & Crisis Scan| Sec[app/security.py]
+        Sec -->|2. Analysis & Diagnostics| Eng[app/engine.py]
+        Eng -->|3. GenAI Processing| Gemini[Google Gemini API]
+        Eng -.->|Fallback if Offline| Sim[Simulated Sandbox]
+    end
+
+    style FE fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#fff
+    style BE fill:#062f4f,stroke:#38bdf8,stroke-width:2px,color:#fff
+    style Vercel fill:#111,stroke:#f43f5e,stroke-width:2px,color:#fff
+    style Gemini fill:#1e3a8a,stroke:#3b82f6,stroke-width:2px,color:#fff
+```
+
 ---
 
 ## 🛠️ Installation & Setup

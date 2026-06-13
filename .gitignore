@@ -29,3 +29,6 @@ npm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Vercel Deployment Directories
+.vercel/
