@@ -25,6 +25,72 @@ const HELPLINES = [
   { name: "Sneha India", number: "+91 44 2464 0050", hours: "24/7" }
 ];
 
+const getExamTrackEmoji = (track) => {
+  switch (track) {
+    case 'JEE': return '🌌';
+    case 'NEET': return '🩺';
+    case 'BOARDS': return '📚';
+    case 'CAT': return '💼';
+    case 'GATE': return '⚙️';
+    case 'UPSC': return '🏛️';
+    default: return '🎓';
+  }
+};
+
+const getExamTrackColor = (track) => {
+  switch (track) {
+    case 'JEE': return {
+      bg: 'bg-blue-500/10 dark:bg-blue-500/20',
+      border: 'border-blue-500/30 dark:border-blue-500/30',
+      activeBorder: 'border-blue-500 dark:border-blue-400',
+      text: 'text-blue-600 dark:text-blue-400',
+      glow: 'shadow-blue-500/10 dark:shadow-blue-500/30'
+    };
+    case 'NEET': return {
+      bg: 'bg-emerald-500/10 dark:bg-emerald-500/20',
+      border: 'border-emerald-500/30 dark:border-emerald-500/30',
+      activeBorder: 'border-emerald-500 dark:border-emerald-400',
+      text: 'text-emerald-600 dark:text-emerald-400',
+      glow: 'shadow-emerald-500/10 dark:shadow-emerald-500/30'
+    };
+    case 'BOARDS': return {
+      bg: 'bg-amber-500/10 dark:bg-amber-500/20',
+      border: 'border-amber-500/30 dark:border-amber-500/30',
+      activeBorder: 'border-amber-500 dark:border-amber-400',
+      text: 'text-amber-600 dark:text-amber-400',
+      glow: 'shadow-amber-500/10 dark:shadow-amber-500/30'
+    };
+    case 'CAT': return {
+      bg: 'bg-purple-500/10 dark:bg-purple-500/20',
+      border: 'border-purple-500/30 dark:border-purple-500/30',
+      activeBorder: 'border-purple-500 dark:border-purple-400',
+      text: 'text-purple-600 dark:text-purple-400',
+      glow: 'shadow-purple-500/10 dark:shadow-purple-500/30'
+    };
+    case 'GATE': return {
+      bg: 'bg-zinc-500/15 dark:bg-zinc-700/25',
+      border: 'border-zinc-300 dark:border-zinc-700',
+      activeBorder: 'border-zinc-500 dark:border-zinc-400',
+      text: 'text-zinc-700 dark:text-zinc-350',
+      glow: 'shadow-zinc-500/10 dark:shadow-zinc-500/30'
+    };
+    case 'UPSC': return {
+      bg: 'bg-rose-500/10 dark:bg-rose-500/20',
+      border: 'border-rose-500/30 dark:border-rose-500/30',
+      activeBorder: 'border-rose-500 dark:border-rose-400',
+      text: 'text-rose-600 dark:text-rose-400',
+      glow: 'shadow-rose-500/10 dark:shadow-rose-500/30'
+    };
+    default: return {
+      bg: 'bg-zinc-500/10 dark:bg-zinc-500/20',
+      border: 'border-zinc-500/30',
+      activeBorder: 'border-zinc-500 dark:border-zinc-400',
+      text: 'text-zinc-600 dark:text-zinc-400',
+      glow: 'shadow-zinc-500/10'
+    };
+  }
+};
+
 function StressLandscape({ anxietyScore }) {
   const isLow = anxietyScore < 40;
   const isMedium = anxietyScore >= 40 && anxietyScore < 75;
@@ -664,6 +730,28 @@ function App() {
               </button>
             </nav>
 
+            {/* Global Active Track Selector */}
+            <div className="relative inline-block no-print">
+              <select
+                value={exam}
+                onChange={(e) => setExam(e.target.value)}
+                className={`appearance-none bg-zinc-50 dark:bg-zinc-900 border rounded-xl pl-7 pr-7 py-2 text-[10px] md:text-xs font-bold font-mono tracking-wide cursor-pointer focus:outline-none focus:ring-2 focus:ring-accentPurple transition-all duration-300 ${getExamTrackColor(exam).bg} ${getExamTrackColor(exam).border} ${getExamTrackColor(exam).text}`}
+              >
+                <option value="JEE">JEE</option>
+                <option value="NEET">NEET</option>
+                <option value="BOARDS">BOARDS</option>
+                <option value="CAT">CAT</option>
+                <option value="GATE">GATE</option>
+                <option value="UPSC">UPSC</option>
+              </select>
+              <div className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-xs">
+                {getExamTrackEmoji(exam)}
+              </div>
+              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[8px] opacity-60">
+                ▼
+              </div>
+            </div>
+
             <button
               onClick={() => setDarkMode(!darkMode)}
               className="p-2 md:p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all shadow-sm flex items-center justify-center hover:scale-105 active:scale-95"
@@ -699,6 +787,33 @@ function App() {
               <p className="text-sm md:text-base text-zinc-600 dark:text-zinc-400 font-light max-w-lg mx-auto leading-relaxed">
                 Your premium academic sanctuary. Analyze mental burnout indicators, receive tailor-made counseling resources, and de-clutter chaotic syllabus loads smoothly with 144Hz smoothness.
               </p>
+            </div>
+
+            <div className="space-y-4 pt-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                Select Your Target Examination Track
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-md mx-auto">
+                {['JEE', 'NEET', 'BOARDS', 'CAT', 'GATE', 'UPSC'].map((track) => {
+                  const isSelected = exam === track;
+                  const colors = getExamTrackColor(track);
+                  return (
+                    <button
+                      key={track}
+                      type="button"
+                      onClick={() => setExam(track)}
+                      className={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-all duration-300 transform cursor-pointer hover:scale-[1.03] active:scale-[0.97] ${
+                        isSelected 
+                          ? `${colors.bg} ${colors.activeBorder} ${colors.text} shadow-md ${colors.glow} font-bold ring-2 ring-accentPurple/25`
+                          : 'bg-zinc-50/50 dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50'
+                      }`}
+                    >
+                      <span className="text-2xl mb-1.5 transition-transform duration-300 hover:scale-110">{getExamTrackEmoji(track)}</span>
+                      <span className="text-xs font-mono tracking-wider">{track}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="pt-4">
@@ -814,23 +929,14 @@ function App() {
             </h2>
 
             <form onSubmit={generateAnalysis} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="exam-select" className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                  Target Examination
-                </label>
-                <select
-                  id="exam-select"
-                  value={exam}
-                  onChange={(e) => setExam(e.target.value)}
-                  className="w-full bg-zinc-50 dark:bg-[#18181b] border border-zinc-200 dark:border-zinc-700/80 rounded-xl px-4 py-3 text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-accentPurple transition-all font-medium text-sm cursor-pointer"
-                >
-                  <option value="JEE">JEE (Joint Entrance Examination)</option>
-                  <option value="NEET">NEET (National Eligibility cum Entrance Test)</option>
-                  <option value="BOARDS">Class 10 / 12 Board Exams (CBSE, ICSE, State Boards)</option>
-                  <option value="CAT">CAT (Common Admission Test)</option>
-                  <option value="GATE">GATE (Graduate Aptitude Test in Engineering)</option>
-                  <option value="UPSC">UPSC (Union Public Service Commission)</option>
-                </select>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 px-4 py-3 bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800/80 rounded-xl transition-all duration-300">
+                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Active Syllabus Track:</span>
+                <div className="flex items-center gap-2">
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border text-xs font-bold font-mono tracking-wide transition-all duration-300 ${getExamTrackColor(exam).bg} ${getExamTrackColor(exam).border} ${getExamTrackColor(exam).text}`}>
+                    {getExamTrackEmoji(exam)} {exam}
+                  </span>
+                  <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-light">(Adjust this globally in the top header)</span>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -1156,23 +1262,14 @@ function App() {
             </h2>
 
             <form onSubmit={generateDeclutter} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="exam-select-declutter" className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                  Target Examination
-                </label>
-                <select
-                  id="exam-select-declutter"
-                  value={exam}
-                  onChange={(e) => setExam(e.target.value)}
-                  className="w-full bg-zinc-50 dark:bg-[#18181b] border border-zinc-200 dark:border-zinc-700/80 rounded-xl px-4 py-3 text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-accentMagenta transition-all font-medium text-sm cursor-pointer"
-                >
-                  <option value="JEE">JEE (Joint Entrance Examination)</option>
-                  <option value="NEET">NEET (National Eligibility cum Entrance Test)</option>
-                  <option value="BOARDS">Class 10 / 12 Board Exams (CBSE, ICSE, State Boards)</option>
-                  <option value="CAT">CAT (Common Admission Test)</option>
-                  <option value="GATE">GATE (Graduate Aptitude Test in Engineering)</option>
-                  <option value="UPSC">UPSC (Union Public Service Commission)</option>
-                </select>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 px-4 py-3 bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800/80 rounded-xl transition-all duration-300">
+                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Active Syllabus Track:</span>
+                <div className="flex items-center gap-2">
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border text-xs font-bold font-mono tracking-wide transition-all duration-300 ${getExamTrackColor(exam).bg} ${getExamTrackColor(exam).border} ${getExamTrackColor(exam).text}`}>
+                    {getExamTrackEmoji(exam)} {exam}
+                  </span>
+                  <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-light">(Adjust this globally in the top header)</span>
+                </div>
               </div>
 
               <div className="space-y-2">

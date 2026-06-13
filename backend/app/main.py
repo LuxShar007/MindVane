@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import BaseModel, Field
 from app.schemas import (
     JournalInput, 
@@ -33,6 +34,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 3. Configure GzipMiddleware to compress response payloads (minimum size 1000 bytes)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
 # Pydantic input contract for declutter backlog route
 class BacklogInput(BaseModel):
     exam: str = Field(..., description="Target exam path (e.g. JEE, NEET, BOARDS, UPSC)")
@@ -40,7 +44,7 @@ class BacklogInput(BaseModel):
 
 # 3. Expose POST route pointing to /api/analyze-journal
 @app.post("/api/analyze-journal", response_model=BurnoutAnalysisResponse)
-async def analyze_journal(payload: JournalInput):
+async def analyze_journal(payload: JournalInput) -> BurnoutAnalysisResponse:
     """
     Ingests exam state and journal text to yield deep burnout analytics.
     """
@@ -60,7 +64,7 @@ async def analyze_journal(payload: JournalInput):
 
 # Legacy support endpoint for previous frontend client configurations
 @app.post("/_/backend/api/analyze-journal", response_model=AnalysisResult)
-async def analyze_journal_legacy(payload: JournalInput):
+async def analyze_journal_legacy(payload: JournalInput) -> AnalysisResult:
     """
     Legacy endpoint mapping to standard frontend expected parameters.
     """
@@ -80,7 +84,7 @@ async def analyze_journal_legacy(payload: JournalInput):
 # 4. Expose POST route pointing to /api/declutter-backlog (and legacy support)
 @app.post("/api/declutter-backlog", response_model=DeclutterResponse)
 @app.post("/_/backend/api/declutter-backlog", response_model=DeclutterResponse)
-async def declutter_backlog(payload: BacklogInput):
+async def declutter_backlog(payload: BacklogInput) -> DeclutterResponse:
     """
     Ingests backlog text to output an atomic de-clutter study framework.
     """
@@ -101,7 +105,7 @@ async def declutter_backlog(payload: BacklogInput):
 # Exposing chat companion to ensure existing frontend React chatbot continues to operate
 @app.post("/api/chat-companion", response_model=ChatResponse)
 @app.post("/_/backend/api/chat-companion", response_model=ChatResponse)
-async def chat_companion(payload: ChatInput):
+async def chat_companion(payload: ChatInput) -> ChatResponse:
     """
     Ingest user chat message and history to reply empathetically.
     """

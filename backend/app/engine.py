@@ -1,5 +1,6 @@
 import os
 import random
+from typing import Optional, Any, List, Dict
 from google import genai
 from google.genai import types
 from app.schemas import (
@@ -34,15 +35,22 @@ for path in env_paths:
 # Check if GEMINI_API_KEY is present in environment
 API_KEY = os.environ.get("GEMINI_API_KEY")
 
-def get_genai_client():
+_client: Optional[genai.Client] = None
+
+def get_genai_client() -> Optional[genai.Client]:
     """
     Initialize the Google GenAI client if an API key is available.
+    Uses global caching to avoid repeated client creation overhead.
     """
+    global _client
+    if _client is not None:
+        return _client
     if not API_KEY:
         return None
     try:
         # Uses the official google-genai SDK
-        return genai.Client(api_key=API_KEY)
+        _client = genai.Client(api_key=API_KEY)
+        return _client
     except Exception as e:
         print(f"Warning: Failed to initialize Google GenAI Client: {e}")
         return None
@@ -267,7 +275,7 @@ def analyze_journal_with_gemini(exam: str, text: str, risk_flagged: bool = False
         encouragement=analytics.encouragement
     )
 
-def chat_companion_with_gemini(message: str, history_list: list, exam: str) -> str:
+def chat_companion_with_gemini(message: str, history_list: List[Any], exam: str) -> str:
     """
     Empathetic chatbot companion using Google GenAI SDK.
     """
