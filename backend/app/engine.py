@@ -2,7 +2,7 @@ import os
 import random
 from google import genai
 from google.genai import types
-from app.schemas import AnalysisResult, StressTrigger
+from app.schemas import AnalysisResult, StressTrigger, LegacyStressTrigger
 
 # Load .env file manually if it exists from potential relative directories
 env_paths = [
@@ -51,8 +51,8 @@ def generate_simulated_analysis(exam: str, text: str, risk_flagged: bool = False
             anxiety_score=96,
             emotional_trends=["Critical Overwhelm", "Extreme Isolation", "Helplessness"],
             stress_triggers=[
-                StressTrigger(trigger="Severe Exam Pressure Burden", impact="High"),
-                StressTrigger(trigger="Mental Health Emergency Trigger", impact="High")
+                LegacyStressTrigger(trigger="Severe Exam Pressure Burden", impact="High"),
+                LegacyStressTrigger(trigger="Mental Health Emergency Trigger", impact="High")
             ],
             mindfulness_exercise="Emergency Safety Checklist: 1. Put away all books. 2. Contact one of the verified helplines immediately. 3. Sit near a window or drink cold water.",
             encouragement="Please pause right now. Your exam preparation, score, and career milestone do not define your life. There are people trained to support you through this exact feeling. Reach out."
@@ -77,19 +77,19 @@ def generate_simulated_analysis(exam: str, text: str, risk_flagged: bool = False
 
     triggers = []
     if "sleep" in lowercase_text or "night" in lowercase_text or "tired" in lowercase_text:
-        triggers.append(StressTrigger(trigger="Sleep Quality Deprivation", impact="Severe"))
+        triggers.append(LegacyStressTrigger(trigger="Sleep Quality Deprivation", impact="Severe"))
     if "mock" in lowercase_text or "test" in lowercase_text or "marks" in lowercase_text or "score" in lowercase_text:
-        triggers.append(StressTrigger(trigger="Mock Exam Score Anxiety", impact="Severe"))
+        triggers.append(LegacyStressTrigger(trigger="Mock Exam Score Anxiety", impact="Severe"))
     if "parent" in lowercase_text or "expect" in lowercase_text or "family" in lowercase_text:
-        triggers.append(StressTrigger(trigger="Socio-parental Pressure", impact="Elevated"))
+        triggers.append(LegacyStressTrigger(trigger="Socio-parental Pressure", impact="Elevated"))
     if "revision" in lowercase_text or "syllabus" in lowercase_text or "backlog" in lowercase_text:
-        triggers.append(StressTrigger(trigger="Syllabus Accumulation Burden", impact="Elevated"))
+        triggers.append(LegacyStressTrigger(trigger="Syllabus Accumulation Burden", impact="Elevated"))
     if "focus" in lowercase_text or "concentrate" in lowercase_text or "distract" in lowercase_text:
-        triggers.append(StressTrigger(trigger="Cognitive Attentional Fatigue", impact="Moderate"))
+        triggers.append(LegacyStressTrigger(trigger="Cognitive Attentional Fatigue", impact="Moderate"))
 
     if not triggers:
-        triggers.append(StressTrigger(trigger="General Competitive Exam Strain", impact="Moderate"))
-        triggers.append(StressTrigger(trigger="Academic Performance Goal Pressure", impact="Moderate"))
+        triggers.append(LegacyStressTrigger(trigger="General Competitive Exam Strain", impact="Moderate"))
+        triggers.append(LegacyStressTrigger(trigger="Academic Performance Goal Pressure", impact="Moderate"))
 
     trends = []
     if final_score >= 80:
