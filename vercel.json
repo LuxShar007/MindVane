@@ -1,17 +1,13 @@
 {
-  "projectSettings": {
-    "framework": "services"
-  },
   "experimentalServices": {
     "frontend": {
-      "entrypoint": "frontend",
+      "root": "frontend",
       "routePrefix": "/",
       "framework": "vite"
     },
     "backend": {
-      "entrypoint": "backend/app/main.py",
-      "routePrefix": "/_/backend",
-      "framework": "fastapi"
+      "root": "backend",
+      "routePrefix": "/_/backend"
     }
   }
 }
