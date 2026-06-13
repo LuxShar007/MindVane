@@ -1,13 +1,109 @@
 import sys
 import os
+import pytest
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
 # Adjust path to enable importing from app
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app.main import app
+from app.schemas import (
+    BurnoutAnalysisResponse, 
+    DeclutterResponse, 
+    StressTrigger, 
+    AtomicStep
+)
+from app.security import clean_payload_text
 
 client = TestClient(app)
+
+# ==============================================================================
+# SECTION 1: CORE UTILITIES & SECURITY TESTS
+# ==============================================================================
+
+def test_security_sanitization_xss_protection():
+    """
+    Audit security sanitization routines.
+    Confirm HTML tags, script blocks, and iframes are escaped to prevent XSS payloads
+    while keeping authentic text intact.
+    """
+    # 1. Malicious script tags escaping check
+    xss_payload = "I am stressed. <script>alert('XSS')</script> Can you help?"
+    sanitized = clean_payload_text(xss_payload)
+    
+    assert "<script>" not in sanitized
+    assert "&lt;script&gt;" in sanitized
+    assert "I am stressed." in sanitized
+    assert "Can you help?" in sanitized
+
+    # 2. Malicious iframe embedding check
+    iframe_payload = "Study notes here: <iframe src='http://malicious.site'></iframe>"
+    sanitized_iframe = clean_payload_text(iframe_payload)
+    
+    assert "<iframe>" not in sanitized_iframe
+    assert "&lt;iframe" in sanitized_iframe
+    assert "Study notes here:" in sanitized_iframe
+
+
+def test_pydantic_schema_validation_ranges():
+    """
+    Audit structural schema parsing parameters in BurnoutAnalysisResponse and DeclutterResponse.
+    Pass mock payloads to validate constraints (e.g., ge=1, le=100 anxiety scores, risk overrides).
+    """
+    # 1. Valid BurnoutAnalysisResponse payload parsing
+    valid_data = {
+        "anxietyScore": 75,
+        "primaryTrend": "Mock Exam Stress",
+        "triggers": [
+            {"name": "Syllabus Backlog", "impact": "High"}
+        ],
+        "exercise": "Box breathing 4s",
+        "encouragement": "Take it slow.",
+        "recommended_wave": "4Hz Theta Waves",
+        "risk_flagged": False
+    }
+    obj = BurnoutAnalysisResponse(**valid_data)
+    assert obj.anxietyScore == 75
+    assert obj.risk_flagged is False
+    assert len(obj.triggers) == 1
+    assert obj.recommended_wave == "4Hz Theta Waves"
+    
+    # 2. Out-of-bounds anxietyScore range (ge=1, le=100) - high edge
+    invalid_data_high = valid_data.copy()
+    invalid_data_high["anxietyScore"] = 105
+    with pytest.raises(ValidationError):
+        BurnoutAnalysisResponse(**invalid_data_high)
+        
+    # 3. Out-of-bounds anxietyScore range (ge=1, le=100) - low edge
+    invalid_data_low = valid_data.copy()
+    invalid_data_low["anxietyScore"] = 0
+    with pytest.raises(ValidationError):
+        BurnoutAnalysisResponse(**invalid_data_low)
+        
+    # 4. Valid DeclutterResponse payload parsing
+    valid_declutter = {
+        "reassurance": "You can resolve this backlog step-by-step.",
+        "atomic_steps": [
+            {"task_name": "Read biology chapter 1", "estimated_minutes": 20, "priority": "High"},
+            {"task_name": "Solve physics kinematics Q1", "estimated_minutes": 15, "priority": "Medium"}
+        ]
+    }
+    declutter_obj = DeclutterResponse(**valid_declutter)
+    assert len(declutter_obj.atomic_steps) == 2
+    assert declutter_obj.atomic_steps[0].estimated_minutes == 20
+    
+    # 5. Invalid DeclutterResponse step estimated_minutes (must be ge=0)
+    invalid_declutter = valid_declutter.copy()
+    invalid_declutter["atomic_steps"] = [
+        {"task_name": "Negative time constraint", "estimated_minutes": -5, "priority": "High"}
+    ]
+    with pytest.raises(ValidationError):
+        DeclutterResponse(**invalid_declutter)
+
+# ==============================================================================
+# SECTION 2: ENDPOINT INTEGRATION TESTS
+# ==============================================================================
 
 def test_analyze_journal_normal():
     """
@@ -29,6 +125,7 @@ def test_analyze_journal_normal():
     assert "mindfulness_exercise" in data
     assert "encouragement" in data
 
+
 def test_analyze_journal_crisis():
     """
     Test crisis keyword triggers (suicidal ideation safety scanner).
@@ -47,6 +144,7 @@ def test_analyze_journal_crisis():
     assert "mindfulness_exercise" in data
     assert "encouragement" in data
 
+
 def test_analyze_journal_sanitization():
     """
     Test HTML escaping security parameters against XSS vector inputs.
@@ -60,11 +158,9 @@ def test_analyze_journal_sanitization():
         }
     )
     assert response.status_code == 200
-    # The output from the API should not throw errors and must handle request.
-    # Internally, the sanitization replaces < and > with entity references.
-    # Note: the test verifies input is processed cleanly.
     data = response.json()
     assert data is not None
+
 
 def test_chat_companion():
     """
@@ -86,9 +182,10 @@ def test_chat_companion():
     assert isinstance(data["reply"], str)
     assert len(data["reply"]) > 0
 
+
 def test_empty_payload_rejection():
     """
-    Test input validation validation failure handling.
+    Test input validation failure handling (HTTP 400).
     """
     response = client.post(
         "/_/backend/api/analyze-journal",
@@ -98,6 +195,7 @@ def test_empty_payload_rejection():
         }
     )
     assert response.status_code == 400
+
 
 def test_engine_generate_burnout_analytics():
     """
@@ -118,6 +216,7 @@ def test_engine_generate_burnout_analytics():
     assert isinstance(result_board, BurnoutAnalysisResponse)
     assert 1 <= result_board.anxietyScore <= 100
 
+
 def test_engine_generate_backlog_breakdown():
     """
     Verify backlog declutter breakdown outputs.
@@ -132,6 +231,7 @@ def test_engine_generate_backlog_breakdown():
         assert step.task_name is not None
         assert step.estimated_minutes >= 0
         assert step.priority in ["High", "Medium", "Low"]
+
 
 def test_api_declutter_backlog():
     """
@@ -152,6 +252,7 @@ def test_api_declutter_backlog():
         assert "task_name" in step
         assert step["estimated_minutes"] >= 0
         assert step["priority"] in ["High", "Medium", "Low"]
+
 
 def test_api_declutter_backlog_empty_rejection():
     """
