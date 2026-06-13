@@ -117,7 +117,7 @@ function StressLandscape({ anxietyScore }) {
   }
 
   return (
-    <div className={`bg-white dark:bg-[#121212] border ${borderColor} rounded-2xl p-5 shadow-lg flex flex-col md:flex-row items-center gap-6 transition-all duration-500`}>
+    <div className={`bg-white dark:bg-[#121212] bg-gradient-to-br ${bgGradient} border ${borderColor} rounded-2xl p-5 shadow-lg flex flex-col md:flex-row items-center gap-6 transition-all duration-500`}>
       <div className="flex-1 space-y-2">
         <span className="text-xs uppercase tracking-wider text-zinc-500 font-bold block">Mental Landscape Visualization</span>
         <h3 className={`text-base font-bold ${titleColor} flex items-center gap-2`}>
@@ -242,18 +242,18 @@ function StressLandscape({ anxietyScore }) {
   );
 }
 
+const mottos = [
+  "De-cluttering chaotic backlogs...",
+  "Visualizing cognitive workloads...",
+  "Empathetic companion by your side...",
+  "Your peace of mind, prioritized."
+];
+
 function App() {
   const [showIntro, setShowIntro] = useState(true);
   const [introProgress, setIntroProgress] = useState(0);
   const [currentMottoIndex, setCurrentMottoIndex] = useState(0);
   const [introFadeOut, setIntroFadeOut] = useState(false);
-
-  const mottos = [
-    "De-cluttering chaotic backlogs...",
-    "Visualizing cognitive workloads...",
-    "Empathetic companion by your side...",
-    "Your peace of mind, prioritized."
-  ];
 
   useEffect(() => {
     const progressTimer = setInterval(() => {

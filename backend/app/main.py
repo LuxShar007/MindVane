@@ -10,7 +10,7 @@ from app.schemas import (
     ChatResponse,
     AnalysisResult
 )
-from app.security import clean_payload_text, scan_for_crisis
+from app.security import clean_payload_text
 from app.engine import (
     generate_burnout_analytics, 
     generate_backlog_breakdown,
