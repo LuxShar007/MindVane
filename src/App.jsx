@@ -1,17 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Brain, 
   Send, 
   AlertOctagon, 
   Compass, 
   Activity, 
-  HelpCircle,
   Sparkles, 
   Flame, 
   PhoneCall, 
   RefreshCw,
   Heart,
-  Calendar,
   MessageSquare,
   Smile
 } from 'lucide-react';
@@ -71,6 +69,7 @@ function App() {
           setServerMode('Vercel Production Mode (Relative Routes)');
         }
       } catch (err) {
+        console.warn("Server check failed: ", err);
         setServerMode('Stand-alone Sandbox Mode');
       }
     };
@@ -267,9 +266,9 @@ function App() {
 
   // Dynamic colors helper
   const getAnxietyColor = (score) => {
-    if (score < 40) return { border: 'border-accentEmerald', text: 'text-accentEmerald', bg: 'bg-accentEmerald/10' };
-    if (score < 75) return { border: 'border-accentAmber', text: 'text-accentAmber', bg: 'bg-accentAmber/10' };
-    return { border: 'border-rose-500', text: 'text-rose-500', bg: 'bg-rose-500/10' };
+    if (score < 40) return { border: 'border-accentEmerald', text: 'text-accentEmerald', bg: 'bg-accentEmerald/10', hex: '#10b981' };
+    if (score < 75) return { border: 'border-accentAmber', text: 'text-accentAmber', bg: 'bg-accentAmber/10', hex: '#f59e0b' };
+    return { border: 'border-rose-500', text: 'text-rose-500', bg: 'bg-rose-500/10', hex: '#ef4444' };
   };
 
   const getImpactBadgeColor = (impact) => {
@@ -465,7 +464,7 @@ function App() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   
                   {/* Anxiety Meter */}
-                  <div className="bg-[#121212] border border-zinc-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+                  <div className={`bg-[#121212] border ${getAnxietyColor(analysis.anxiety_score).border} rounded-2xl p-5 shadow-lg flex flex-col justify-between transition-all duration-500`}>
                     <div>
                       <span className="text-xs uppercase tracking-wider text-zinc-500 font-bold block mb-1">Anxiety Index Meter</span>
                       <h4 className="text-sm text-zinc-300 font-medium">Cognitive Stress Level</h4>
@@ -486,7 +485,7 @@ function App() {
                           cx="64"
                           cy="64"
                           r="54"
-                          stroke={analysis.anxiety_score >= 75 ? "#f59e0b" : "#10b981"} // Amber vs Emerald Green
+                          stroke={getAnxietyColor(analysis.anxiety_score).hex}
                           strokeWidth="8"
                           fill="transparent"
                           strokeDasharray={2 * Math.PI * 54}
@@ -497,7 +496,7 @@ function App() {
                       </svg>
                       
                       <div className="absolute flex flex-col items-center">
-                        <span className={`text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400 neon-glow-magenta`}>
+                        <span className={`text-3xl font-extrabold tracking-tight ${getAnxietyColor(analysis.anxiety_score).text} neon-glow-magenta`}>
                           {analysis.anxiety_score}
                         </span>
                         <span className="text-[10px] text-zinc-500 uppercase font-semibold">Score</span>
@@ -506,8 +505,8 @@ function App() {
 
                     <div className="flex items-center justify-between text-xs border-t border-zinc-800/80 pt-3">
                       <span className="text-zinc-500">Classification:</span>
-                      <span className={`font-semibold ${analysis.anxiety_score >= 75 ? 'text-accentAmber' : 'text-accentEmerald'}`}>
-                        {analysis.anxiety_score >= 75 ? 'Elevated Burden (Amber)' : 'Stable Baseline (Emerald)'}
+                      <span className={`font-semibold ${getAnxietyColor(analysis.anxiety_score).text}`}>
+                        {analysis.anxiety_score >= 75 ? 'Elevated Burden (Rose)' : analysis.anxiety_score >= 40 ? 'Moderate Burden (Amber)' : 'Stable Baseline (Emerald)'}
                       </span>
                     </div>
                   </div>
