@@ -11,6 +11,7 @@ class StudentTrack(str, Enum):
     GATE = "GATE"
     UPSC = "UPSC"
     CAT = "CAT"
+    CUET = "CUET"
     CBSE_12TH = "CBSE_12TH"
     STATE_BOARDS = "STATE_BOARDS"
 
@@ -61,6 +62,10 @@ class BurnoutAnalysisResponse(BaseModel):
         ..., 
         description="Safety flag set to True if acute distress or self-harm warnings are triggered"
     )
+    coping_strategy: str = Field(
+        default="Take a 10-minute quiet walk, decouple your identity from mock grades, and focus on one specific chapter.",
+        description="A tailored cognitive coping strategy to combat academic burnout and stress"
+    )
 
 class AtomicStep(BaseModel):
     """
@@ -98,6 +103,7 @@ class DeclutterResponse(BaseModel):
 class JournalInput(BaseModel):
     exam: str = Field(..., description="Target exam or board exams (e.g. JEE, NEET, BOARDS, UPSC)")
     journal_text: str = Field(..., description="Self-reported text thoughts from the student")
+    mood: Optional[str] = Field("Anxious", description="Selected self-reported mood state")
 
 class LegacyStressTrigger(BaseModel):
     trigger: str = Field(..., description="Identified stress source")
@@ -110,6 +116,7 @@ class AnalysisResult(BaseModel):
     stress_triggers: List[LegacyStressTrigger] = Field(..., description="List of itemized stressors")
     mindfulness_exercise: str = Field(..., description="Adaptive tailored exercise recommendation")
     encouragement: str = Field(..., description="Empathetic encouragement message")
+    coping_strategy: Optional[str] = Field("Focus on progressive relaxation exercises.", description="Tailored coping strategy")
 
 class ChatMessage(BaseModel):
     role: str = Field(..., description="Role of the sender, either 'user' or 'assistant'")

@@ -56,7 +56,7 @@ def get_genai_client() -> Optional[genai.Client]:
 
 # --- NEW FULL-STACK ENGINE FUNCTIONS ---
 
-def generate_burnout_analytics(exam: str, journal_entry: str) -> BurnoutAnalysisResponse:
+def generate_burnout_analytics(exam: str, journal_entry: str, mood: str = "Anxious") -> BurnoutAnalysisResponse:
     """
     Analyze student journal entries for hidden burnout patterns using Gemini 2.5 Flash.
     """
@@ -78,20 +78,22 @@ def generate_burnout_analytics(exam: str, journal_entry: str) -> BurnoutAnalysis
     You are a supportive, expert mental health counselor for students. 
     Profile Instruction: {profile_instruction}
     
+    Student's self-reported mood state is: {mood}. Incorporate this feeling contextually into your diagnostics and coping guidance.
+    
     CRITICAL SAFETY REQUIREMENT: You must evaluate the student's entry for clinical self-harm or deep emotional crisis.
     If suicidal ideation or self-harm warnings are present, you MUST set `risk_flagged` to true immediately.
     
     You must output a structured JSON strictly matching the BurnoutAnalysisResponse schema.
     Be extremely precise and concise to minimize response latency.
-    Keep the exercise parameter under 2 sentences, encouragement parameter under 1 sentence, and each stress trigger name to 2-4 words.
+    Keep the exercise parameter under 2 sentences, the encouragement parameter under 1 sentence, the coping_strategy parameter under 2 sentences, and each stress trigger name to 2-4 words.
     """
 
     client = get_genai_client()
     if not client:
-        return get_simulated_burnout_analytics(exam, journal_entry)
+        return get_simulated_burnout_analytics(exam, journal_entry, mood)
 
     try:
-        prompt = f"Syllabus Track: {exam}\nJournal Entry: {journal_entry}"
+        prompt = f"Syllabus Track: {exam}\nStudent Mood: {mood}\nJournal Entry: {journal_entry}"
         
         response = client.models.generate_content(
             model='gemini-2.5-flash',
@@ -116,7 +118,7 @@ def generate_burnout_analytics(exam: str, journal_entry: str) -> BurnoutAnalysis
         return result
     except Exception as e:
         print(f"GenAI generate_burnout_analytics failed, falling back: {e}")
-        return get_simulated_burnout_analytics(exam, journal_entry)
+        return get_simulated_burnout_analytics(exam, journal_entry, mood)
 
 def generate_backlog_breakdown(exam: str, raw_backlog: str) -> DeclutterResponse:
     """
@@ -169,7 +171,7 @@ def generate_backlog_breakdown(exam: str, raw_backlog: str) -> DeclutterResponse
 
 # --- RESILIENT SANDBOX FALLBACKS ---
 
-def get_simulated_burnout_analytics(exam: str, journal_entry: str) -> BurnoutAnalysisResponse:
+def get_simulated_burnout_analytics(exam: str, journal_entry: str, mood: str = "Anxious") -> BurnoutAnalysisResponse:
     """
     Simulate burnout analytics for local sandbox development.
     """
@@ -187,7 +189,8 @@ def get_simulated_burnout_analytics(exam: str, journal_entry: str) -> BurnoutAna
             exercise="Self-Care Checklist: Put books away, sip cool water, and contact helpline.",
             encouragement="Your safety and health are more valuable than any milestone. Please reach out.",
             recommended_wave="4Hz Theta Waves",
-            risk_flagged=True
+            risk_flagged=True,
+            coping_strategy="Stop studying immediately. Focus on grounding techniques: touch 5 physical objects, sip water, and talk to a professional counselor."
         )
 
     lowercase_text = journal_entry.lower()
@@ -214,6 +217,14 @@ def get_simulated_burnout_analytics(exam: str, journal_entry: str) -> BurnoutAna
     if not triggers:
         triggers.append(StressTrigger(name="General Course Schedule Strain", impact="Medium"))
 
+    # Dynamic coping strategies based on selected mood/score
+    if score > 75:
+        coping = f"Step back from {exam} study for 20 mins. Write down only 1 topic to tackle next, and ignore all scores."
+    elif mood.lower() in ["tired", "exhausted"]:
+        coping = "Prioritize sleep hygiene: set a strict sleep window, shut off all screens, and review notes only in daylight."
+    else:
+        coping = f"Focus on active recall instead of re-reading. Break your {exam} syllabus into timeblocks of 25 minutes."
+
     return BurnoutAnalysisResponse(
         anxietyScore=score,
         primaryTrend=trend,
@@ -221,7 +232,8 @@ def get_simulated_burnout_analytics(exam: str, journal_entry: str) -> BurnoutAna
         exercise="Try box breathing: Inhale 4s, hold 4s, exhale 4s, hold 4s. Repeat 4 times.",
         encouragement="Take it one subject at a time. Academic pressure is intense, but you are resilient.",
         recommended_wave=wave,
-        risk_flagged=False
+        risk_flagged=False,
+        coping_strategy=coping
     )
 
 def get_simulated_backlog_breakdown(exam: str, raw_backlog: str) -> DeclutterResponse:
@@ -251,7 +263,7 @@ def get_simulated_backlog_breakdown(exam: str, raw_backlog: str) -> DeclutterRes
 
 # --- BACKWARDS COMPATIBILITY WRAPPERS ---
 
-def analyze_journal_with_gemini(exam: str, text: str, risk_flagged: bool = False) -> AnalysisResult:
+def analyze_journal_with_gemini(exam: str, text: str, risk_flagged: bool = False, mood: str = "Anxious") -> AnalysisResult:
     """
     Wrapper mapping the new BurnoutAnalysisResponse schemas to the legacy AnalysisResult payload format.
     """
@@ -259,7 +271,7 @@ def analyze_journal_with_gemini(exam: str, text: str, risk_flagged: bool = False
     from app.security import scan_for_crisis
     flagged = risk_flagged or scan_for_crisis(text)
     
-    analytics = generate_burnout_analytics(exam, text)
+    analytics = generate_burnout_analytics(exam, text, mood)
     
     legacy_triggers = []
     for t in analytics.triggers:
@@ -271,7 +283,8 @@ def analyze_journal_with_gemini(exam: str, text: str, risk_flagged: bool = False
         emotional_trends=[analytics.primaryTrend],
         stress_triggers=legacy_triggers,
         mindfulness_exercise=analytics.exercise,
-        encouragement=analytics.encouragement
+        encouragement=analytics.encouragement,
+        coping_strategy=analytics.coping_strategy
     )
 
 def chat_companion_with_gemini(message: str, history_list: List[Any], exam: str) -> str:

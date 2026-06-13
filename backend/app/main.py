@@ -51,6 +51,7 @@ async def analyze_journal(payload: JournalInput) -> BurnoutAnalysisResponse:
     # 5 & 6. Ingest string cleansing and validate input length parameters (throw HTTP 400 if blank)
     cleaned_text = clean_payload_text(payload.journal_text)
     cleaned_exam = clean_payload_text(payload.exam)
+    cleaned_mood = clean_payload_text(payload.mood) if (hasattr(payload, 'mood') and payload.mood) else "Anxious"
 
     if not cleaned_text or cleaned_text.isspace():
         raise HTTPException(status_code=400, detail="Journal entry cannot be empty or purely whitespace.")
@@ -58,7 +59,7 @@ async def analyze_journal(payload: JournalInput) -> BurnoutAnalysisResponse:
         raise HTTPException(status_code=400, detail="Exam track parameter cannot be empty or purely whitespace.")
 
     try:
-        return generate_burnout_analytics(cleaned_exam, cleaned_text)
+        return generate_burnout_analytics(cleaned_exam, cleaned_text, cleaned_mood)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Diagnostic analyzer execution failed: {str(e)}")
 
@@ -70,6 +71,7 @@ async def analyze_journal_legacy(payload: JournalInput) -> AnalysisResult:
     """
     cleaned_text = clean_payload_text(payload.journal_text)
     cleaned_exam = clean_payload_text(payload.exam)
+    cleaned_mood = clean_payload_text(payload.mood) if (hasattr(payload, 'mood') and payload.mood) else "Anxious"
 
     if not cleaned_text or cleaned_text.isspace():
         raise HTTPException(status_code=400, detail="Journal entry cannot be empty or purely whitespace.")
@@ -77,7 +79,7 @@ async def analyze_journal_legacy(payload: JournalInput) -> AnalysisResult:
         raise HTTPException(status_code=400, detail="Exam track parameter cannot be empty or purely whitespace.")
 
     try:
-        return analyze_journal_with_gemini(cleaned_exam, cleaned_text)
+        return analyze_journal_with_gemini(cleaned_exam, cleaned_text, mood=cleaned_mood)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Legacy analyzer execution failed: {str(e)}")
 

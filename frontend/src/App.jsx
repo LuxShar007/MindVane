@@ -13,8 +13,18 @@ import {
   MessageSquare,
   Smile,
   Sun,
-  Moon
+  Moon,
+  Shield
 } from 'lucide-react';
+
+// Mood selector data
+const MOOD_LIST = [
+  { id: 'Happy',   emoji: '😊', label: 'Happy',   activeClass: 'bg-emerald-500/15 border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-emerald-500/20' },
+  { id: 'Sad',     emoji: '😔', label: 'Sad',     activeClass: 'bg-blue-500/15 border-blue-500 text-blue-600 dark:text-blue-400 shadow-blue-500/20' },
+  { id: 'Anxious', emoji: '😰', label: 'Anxious', activeClass: 'bg-amber-500/15 border-amber-500 text-amber-600 dark:text-amber-400 shadow-amber-500/20' },
+  { id: 'Tired',   emoji: '🥱', label: 'Tired',   activeClass: 'bg-purple-500/15 border-purple-500 text-purple-600 dark:text-purple-400 shadow-purple-500/20' },
+  { id: 'Angry',   emoji: '😡', label: 'Angry',   activeClass: 'bg-rose-500/15 border-rose-500 text-rose-600 dark:text-rose-400 shadow-rose-500/20' },
+];
 
 // Help lines for the crisis override popup
 const HELPLINES = [
@@ -33,7 +43,8 @@ const getExamTrackEmoji = (track) => {
     case 'CAT': return '💼';
     case 'GATE': return '⚙️';
     case 'UPSC': return '🏛️';
-    default: return '🎓';
+    case 'CUET': return '🎓';
+    default: return '✏️';
   }
 };
 
@@ -80,6 +91,13 @@ const getExamTrackColor = (track) => {
       activeBorder: 'border-rose-500 dark:border-rose-400',
       text: 'text-rose-600 dark:text-rose-400',
       glow: 'shadow-rose-500/10 dark:shadow-rose-500/30'
+    };
+    case 'CUET': return {
+      bg: 'bg-cyan-500/10 dark:bg-cyan-500/20',
+      border: 'border-cyan-500/30 dark:border-cyan-500/30',
+      activeBorder: 'border-cyan-500 dark:border-cyan-400',
+      text: 'text-cyan-600 dark:text-cyan-400',
+      glow: 'shadow-cyan-500/10 dark:shadow-cyan-500/30'
     };
     default: return {
       bg: 'bg-zinc-500/10 dark:bg-zinc-500/20',
@@ -279,6 +297,7 @@ function App() {
   }, []);
 
   const [exam, setExam] = useState('JEE');
+  const [mood, setMood] = useState('Anxious');
   const [journalText, setJournalText] = useState('');
   const [analysis, setAnalysis] = useState(null);
   
@@ -353,7 +372,7 @@ function App() {
   }, []);
 
   // Helper simulation in case backend is offline
-  const runOfflineAnalysisSimulation = (targetExam, text) => {
+  const runOfflineAnalysisSimulation = (targetExam, text, selectedMood = 'Anxious') => {
     const lowercaseText = text.toLowerCase();
     
     // High-risk keywords matching suicide/self-harm
@@ -370,7 +389,8 @@ function App() {
           { trigger: "Mental Health Emergency Trigger", impact: "High" }
         ],
         mindfulness_exercise: "Emergency Safety Checklist: 1. Put away all books. 2. Contact one of the verified helplines immediately. 3. Sit near a window or drink cold water.",
-        encouragement: "Please pause right now. Your exam preparation, score, and career milestone do not define your life. There are people trained to support you through this exact feeling. Reach out."
+        encouragement: "Please pause right now. Your exam preparation, score, and career milestone do not define your life. There are people trained to support you through this exact feeling. Reach out.",
+        coping_strategy: "Stop studying immediately. Focus on grounding techniques: touch 5 physical objects, sip water, and talk to a professional counselor."
       };
     }
 
@@ -436,13 +456,22 @@ function App() {
     ];
     const selectedExercise = exercises[Math.floor(Math.random() * exercises.length)];
 
+    // Dynamic coping strategies based on selected mood/score
+    let coping = `Focus on active recall instead of re-reading. Break your ${targetExam} syllabus into timeblocks of 25 minutes.`;
+    if (finalScore > 75) {
+      coping = `Step back from ${targetExam} study for 20 mins. Write down only 1 topic to tackle next, and ignore all exam marks.`;
+    } else if (selectedMood.toLowerCase() === 'tired' || selectedMood.toLowerCase() === 'exhausted') {
+      coping = "Prioritize sleep hygiene: set a strict sleep window, shut off all screens, and review notes only in daylight.";
+    }
+
     return {
       risk_flagged: false,
       anxiety_score: finalScore,
       emotional_trends: trends,
       stress_triggers: triggers,
       mindfulness_exercise: selectedExercise,
-      encouragement: selectedEncouragement
+      encouragement: selectedEncouragement,
+      coping_strategy: coping
     };
   };
 
@@ -459,7 +488,7 @@ function App() {
       const response = await fetch(`${base}/_/backend/api/analyze-journal`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ exam, journal_text: journalText })
+        body: JSON.stringify({ exam, journal_text: journalText, mood })
       });
 
       if (!response.ok) {
@@ -482,14 +511,15 @@ function App() {
           impact: t.impact || "Medium"
         })),
         mindfulness_exercise: data.mindfulness_exercise || data.exercise || "Take a slow breath.",
-        encouragement: data.encouragement || "You are doing your best."
+        encouragement: data.encouragement || "You are doing your best.",
+        coping_strategy: data.coping_strategy || null
       };
       setAnalysis(normalizedData);
       setFeedbackMsg("Analysis loaded from backend database.");
     } catch (error) {
       console.warn("Backend API not reachable. Running simulated UI response fallback...", error);
-      // Run offline simulation
-      const simulatedResult = runOfflineAnalysisSimulation(exam, journalText);
+      // Run offline simulation with the currently selected mood
+      const simulatedResult = runOfflineAnalysisSimulation(exam, journalText, mood);
       setAnalysis(simulatedResult);
       setFeedbackMsg("Notice: Running in Client-side Emulated Mode (Offline Fallback)");
     } finally {
@@ -752,6 +782,7 @@ function App() {
               >
                 <option value="JEE">JEE</option>
                 <option value="NEET">NEET</option>
+                <option value="CUET">CUET</option>
                 <option value="BOARDS">BOARDS</option>
                 <option value="CAT">CAT</option>
                 <option value="GATE">GATE</option>
@@ -807,7 +838,7 @@ function App() {
                 Select Your Target Examination Track
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-md mx-auto">
-                {['JEE', 'NEET', 'BOARDS', 'CAT', 'GATE', 'UPSC'].map((track) => {
+                {['JEE', 'NEET', 'CUET', 'BOARDS', 'CAT', 'GATE', 'UPSC'].map((track) => {
                   const isSelected = exam === track;
                   const colors = getExamTrackColor(track);
                   return (
@@ -949,6 +980,35 @@ function App() {
                     {getExamTrackEmoji(exam)} {exam}
                   </span>
                   <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-light">(Adjust this globally in the top header)</span>
+                </div>
+              </div>
+
+              {/* Mood Daily Log Selector */}
+              <div className="space-y-2">
+                <span className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Today&apos;s Mood Log
+                </span>
+                <div className="flex gap-2 flex-wrap">
+                  {MOOD_LIST.map((m) => {
+                    const isActive = mood === m.id;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setMood(m.id)}
+                        aria-label={`Set mood to ${m.label}`}
+                        aria-pressed={isActive}
+                        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-all duration-200 hover:scale-[1.05] active:scale-95 ${
+                          isActive
+                            ? `${m.activeClass} shadow-md ring-2 ring-accentPurple/20`
+                            : 'bg-zinc-50 dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
+                        }`}
+                      >
+                        <span className="text-base leading-none">{m.emoji}</span>
+                        <span>{m.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -1158,6 +1218,20 @@ function App() {
                     <p className="text-xs text-zinc-600 dark:text-zinc-400 font-light leading-relaxed mt-1">{analysis.mindfulness_exercise}</p>
                   </div>
                 </div>
+
+                {/* Tailored Coping Strategy */}
+                {analysis.coping_strategy && (
+                  <div className="bg-gradient-to-br from-emerald-500/5 to-teal-500/5 dark:from-emerald-950/20 dark:to-teal-950/10 border border-emerald-200 dark:border-emerald-800/60 rounded-2xl p-5 shadow-lg flex items-start space-x-4 transition-all duration-500">
+                    <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl mt-0.5 flex-shrink-0">
+                      <Shield className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <span className="text-xs uppercase tracking-wider text-emerald-600 dark:text-emerald-500 font-bold block">Hyper-Personalized Coping Strategy</span>
+                      <h4 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Tailored for Your Mood &amp; Exam Track</h4>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400 font-light leading-relaxed mt-1">{analysis.coping_strategy}</p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Marquee */}
                 <div className="bg-white dark:bg-[#121212] border border-zinc-200 dark:border-zinc-800 rounded-2xl py-3 px-1 overflow-hidden shadow-lg relative">
