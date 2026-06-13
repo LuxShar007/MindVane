@@ -1,5 +1,9 @@
+"""
+MindVane Engine — Handles Google GenAI SDK integration, prompt engineering,
+and simulation fallbacks for all burnout analysis and backlog declutter endpoints.
+"""
 import os
-from typing import Optional, Any, List, Dict
+from typing import Optional, List, Dict, Tuple
 from google import genai
 from google.genai import types
 from app.schemas import (
@@ -28,8 +32,8 @@ for path in env_paths:
                         k, v = line.split("=", 1)
                         os.environ[k.strip()] = v.strip()
             break
-        except Exception as e:
-            print(f"Warning: Failed to load .env from {path}: {e}")
+        except (IOError, OSError, ValueError) as env_err:
+            print(f"Warning: Failed to load .env from {path}: {env_err}")
 
 # Check if GEMINI_API_KEY is present in environment
 API_KEY = os.environ.get("GEMINI_API_KEY")

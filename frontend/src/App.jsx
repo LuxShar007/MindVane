@@ -1,32 +1,30 @@
+/**
+ * @fileoverview MindVane — root application component orchestrating all views:
+ * Welcome, Dashboard, Stress Analyzer, Chat Companion, and Backlog Declutterer.
+ */
 import { useState, useEffect, useRef } from 'react';
-import { 
-  Brain, 
-  Send, 
-  AlertOctagon, 
-  Compass, 
-  Activity, 
-  Sparkles, 
-  Flame, 
-  PhoneCall, 
+import {
+  Brain,
+  Send,
+  AlertOctagon,
+  Compass,
+  Activity,
+  Sparkles,
+  Flame,
+  PhoneCall,
   RefreshCw,
   Heart,
   MessageSquare,
   Smile,
   Sun,
   Moon,
-  Shield
+  Shield,
 } from 'lucide-react';
+import MoodSelector from './components/MoodSelector.jsx';
+import StressLandscape from './components/StressLandscape.jsx';
+import WellnessHistory, { appendWellnessEntry } from './components/WellnessHistory.jsx';
 
-// Mood selector data
-const MOOD_LIST = [
-  { id: 'Happy',   emoji: '😊', label: 'Happy',   activeClass: 'bg-emerald-500/15 border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-emerald-500/20' },
-  { id: 'Sad',     emoji: '😔', label: 'Sad',     activeClass: 'bg-blue-500/15 border-blue-500 text-blue-600 dark:text-blue-400 shadow-blue-500/20' },
-  { id: 'Anxious', emoji: '😰', label: 'Anxious', activeClass: 'bg-amber-500/15 border-amber-500 text-amber-600 dark:text-amber-400 shadow-amber-500/20' },
-  { id: 'Tired',   emoji: '🥱', label: 'Tired',   activeClass: 'bg-purple-500/15 border-purple-500 text-purple-600 dark:text-purple-400 shadow-purple-500/20' },
-  { id: 'Angry',   emoji: '😡', label: 'Angry',   activeClass: 'bg-rose-500/15 border-rose-500 text-rose-600 dark:text-rose-400 shadow-rose-500/20' },
-];
-
-// Help lines for the crisis override popup
+/** @type {ReadonlyArray<{name: string, number: string, hours: string}>} */
 const HELPLINES = [
   { name: "KIRAN Mental Health Helpline", number: "1800-599-0019", hours: "24/7 (Toll-Free, Govt of India)" },
   { name: "Vandrevala Foundation", number: "+91 9999 666 555", hours: "24/7 (Call/WhatsApp)" },
@@ -35,238 +33,110 @@ const HELPLINES = [
   { name: "Sneha India", number: "+91 44 2464 0050", hours: "24/7" }
 ];
 
+/**
+ * Returns the emoji associated with a given exam track identifier.
+ *
+ * @param {string} track - Exam track key (e.g. 'JEE', 'NEET')
+ * @returns {string} Single emoji character
+ */
 const getExamTrackEmoji = (track) => {
-  switch (track) {
-    case 'JEE': return '🌌';
-    case 'NEET': return '🩺';
-    case 'BOARDS': return '📚';
-    case 'CAT': return '💼';
-    case 'GATE': return '⚙️';
-    case 'UPSC': return '🏛️';
-    case 'CUET': return '🎓';
-    default: return '✏️';
-  }
+  const MAP = {
+    JEE: '🌌',
+    NEET: '🩺',
+    BOARDS: '📚',
+    CAT: '💼',
+    GATE: '⚙️',
+    UPSC: '🏛️',
+    CUET: '🎓',
+  };
+  return MAP[track] ?? '✏️';
 };
 
+/**
+ * Returns Tailwind CSS class strings for the given exam track's color theme.
+ *
+ * @param {string} track - Exam track key
+ * @returns {{ bg: string, border: string, activeBorder: string, text: string, glow: string }}
+ */
 const getExamTrackColor = (track) => {
-  switch (track) {
-    case 'JEE': return {
+  const COLOR_MAP = {
+    JEE: {
       bg: 'bg-blue-500/10 dark:bg-blue-500/20',
       border: 'border-blue-500/30 dark:border-blue-500/30',
       activeBorder: 'border-blue-500 dark:border-blue-400',
       text: 'text-blue-600 dark:text-blue-400',
-      glow: 'shadow-blue-500/10 dark:shadow-blue-500/30'
-    };
-    case 'NEET': return {
+      glow: 'shadow-blue-500/10 dark:shadow-blue-500/30',
+    },
+    NEET: {
       bg: 'bg-emerald-500/10 dark:bg-emerald-500/20',
       border: 'border-emerald-500/30 dark:border-emerald-500/30',
       activeBorder: 'border-emerald-500 dark:border-emerald-400',
       text: 'text-emerald-600 dark:text-emerald-400',
-      glow: 'shadow-emerald-500/10 dark:shadow-emerald-500/30'
-    };
-    case 'BOARDS': return {
+      glow: 'shadow-emerald-500/10 dark:shadow-emerald-500/30',
+    },
+    BOARDS: {
       bg: 'bg-amber-500/10 dark:bg-amber-500/20',
       border: 'border-amber-500/30 dark:border-amber-500/30',
       activeBorder: 'border-amber-500 dark:border-amber-400',
       text: 'text-amber-600 dark:text-amber-400',
-      glow: 'shadow-amber-500/10 dark:shadow-amber-500/30'
-    };
-    case 'CAT': return {
+      glow: 'shadow-amber-500/10 dark:shadow-amber-500/30',
+    },
+    CAT: {
       bg: 'bg-purple-500/10 dark:bg-purple-500/20',
       border: 'border-purple-500/30 dark:border-purple-500/30',
       activeBorder: 'border-purple-500 dark:border-purple-400',
       text: 'text-purple-600 dark:text-purple-400',
-      glow: 'shadow-purple-500/10 dark:shadow-purple-500/30'
-    };
-    case 'GATE': return {
+      glow: 'shadow-purple-500/10 dark:shadow-purple-500/30',
+    },
+    GATE: {
       bg: 'bg-zinc-500/15 dark:bg-zinc-700/25',
       border: 'border-zinc-300 dark:border-zinc-700',
       activeBorder: 'border-zinc-500 dark:border-zinc-400',
       text: 'text-zinc-700 dark:text-zinc-350',
-      glow: 'shadow-zinc-500/10 dark:shadow-zinc-500/30'
-    };
-    case 'UPSC': return {
+      glow: 'shadow-zinc-500/10 dark:shadow-zinc-500/30',
+    },
+    UPSC: {
       bg: 'bg-rose-500/10 dark:bg-rose-500/20',
       border: 'border-rose-500/30 dark:border-rose-500/30',
       activeBorder: 'border-rose-500 dark:border-rose-400',
       text: 'text-rose-600 dark:text-rose-400',
-      glow: 'shadow-rose-500/10 dark:shadow-rose-500/30'
-    };
-    case 'CUET': return {
+      glow: 'shadow-rose-500/10 dark:shadow-rose-500/30',
+    },
+    CUET: {
       bg: 'bg-cyan-500/10 dark:bg-cyan-500/20',
       border: 'border-cyan-500/30 dark:border-cyan-500/30',
       activeBorder: 'border-cyan-500 dark:border-cyan-400',
       text: 'text-cyan-600 dark:text-cyan-400',
-      glow: 'shadow-cyan-500/10 dark:shadow-cyan-500/30'
-    };
-    default: return {
+      glow: 'shadow-cyan-500/10 dark:shadow-cyan-500/30',
+    },
+  };
+  return (
+    COLOR_MAP[track] ?? {
       bg: 'bg-zinc-500/10 dark:bg-zinc-500/20',
       border: 'border-zinc-500/30',
       activeBorder: 'border-zinc-500 dark:border-zinc-400',
       text: 'text-zinc-600 dark:text-zinc-400',
-      glow: 'shadow-zinc-500/10'
-    };
-  }
+      glow: 'shadow-zinc-500/10',
+    }
+  );
 };
 
-function StressLandscape({ anxietyScore }) {
-  const isLow = anxietyScore < 40;
-  const isMedium = anxietyScore >= 40 && anxietyScore < 75;
-  const isHigh = anxietyScore >= 75;
 
-  let title = "Serene Mindspace";
-  let description = "Your cognitive load is within a healthy baseline. Keep doing what you're doing.";
-  let bgGradient = "from-emerald-500/10 to-teal-500/5 dark:from-emerald-950/20 dark:to-teal-950/10";
-  let borderColor = "border-emerald-200 dark:border-emerald-800/60";
-  let titleColor = "text-emerald-600 dark:text-emerald-400";
 
-  if (isMedium) {
-    title = "Navigating Winds";
-    description = "Moderate mental load detected. Take short breathing breaks to regain stability.";
-    bgGradient = "from-amber-500/10 to-orange-500/5 dark:from-amber-950/20 dark:to-orange-950/10";
-    borderColor = "border-amber-200 dark:border-amber-800/60";
-    titleColor = "text-amber-600 dark:text-amber-400";
-  } else if (isHigh) {
-    title = "Stormy Horizon";
-    description = "High emotional overload. Halt rigorous studying, step away, and seek support.";
-    bgGradient = "from-rose-500/10 to-purple-500/5 dark:from-rose-950/20 dark:to-purple-950/10";
-    borderColor = "border-rose-200 dark:border-rose-800/60";
-    titleColor = "text-rose-500 dark:text-rose-400";
-  }
-
-  return (
-    <div className={`bg-white dark:bg-[#121212] bg-gradient-to-br ${bgGradient} border ${borderColor} rounded-2xl p-5 shadow-lg flex flex-col md:flex-row items-center gap-6 transition-all duration-500`}>
-      <div className="flex-1 space-y-2">
-        <span className="text-xs uppercase tracking-wider text-zinc-500 font-bold block">Mental Landscape Visualization</span>
-        <h3 className={`text-base font-bold ${titleColor} flex items-center gap-2`}>
-          {isLow && <Smile className="h-5 w-5" />}
-          {isMedium && <Activity className="h-5 w-5" />}
-          {isHigh && <AlertOctagon className="h-5 w-5" />}
-          {title}
-        </h3>
-        <p className="text-xs text-zinc-600 dark:text-zinc-400 font-light leading-relaxed">
-          {description}
-        </p>
-      </div>
-
-      <div className={`w-full md:w-64 h-36 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-850 relative bg-gradient-to-br ${isLow ? 'from-sky-100 to-emerald-50 dark:from-slate-900 dark:to-emerald-950/40' : isMedium ? 'from-amber-50 to-orange-100/50 dark:from-slate-900 dark:to-amber-950/40' : 'from-purple-950/30 to-rose-950/40 dark:from-slate-950 dark:to-rose-950/30'} transition-all duration-500 flex items-center justify-center`}>
-        <svg viewBox="0 0 300 120" className="w-full h-full select-none" xmlns="http://www.w3.org/2000/svg">
-          {/* Defs for gradients */}
-          <defs>
-            <linearGradient id="hill-low" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#34d399" stopOpacity="0.8"/>
-              <stop offset="100%" stopColor="#059669" stopOpacity="0.9"/>
-            </linearGradient>
-            <linearGradient id="hill-medium" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.8"/>
-              <stop offset="100%" stopColor="#d97706" stopOpacity="0.9"/>
-            </linearGradient>
-            <linearGradient id="hill-high" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#f43f5e" stopOpacity="0.7"/>
-              <stop offset="100%" stopColor="#be123c" stopOpacity="0.9"/>
-            </linearGradient>
-            <linearGradient id="sky-high" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#1e1b4b" />
-              <stop offset="100%" stopColor="#31102f" />
-            </linearGradient>
-          </defs>
-
-          {/* Low Anxiety (Serene Landscape) */}
-          {isLow && (
-            <g>
-              {/* Calm Sun */}
-              <circle cx="250" cy="35" r="18" fill="#fef08a" filter="drop-shadow(0px 0px 8px #fef08a)" />
-              
-              {/* Back Hill */}
-              <path d="M 0 120 Q 90 60 180 85 T 300 95 L 300 120 L 0 120 Z" fill="#6ee7b7" opacity="0.6" />
-              
-              {/* Front Hill */}
-              <path d="M 0 120 Q 120 75 220 90 T 300 105 L 300 120 L 0 120 Z" fill="url(#hill-low)" />
-              
-              {/* Puffy Clouds */}
-              <path d="M 40 40 Q 45 32 53 35 Q 60 30 67 36 Q 73 37 72 43 Z" fill="#ffffff" opacity="0.9" />
-              <path d="M 140 25 Q 148 15 158 18 Q 166 12 175 19 Q 182 21 180 28 Z" fill="#ffffff" opacity="0.75" />
-              
-              {/* Birds */}
-              <path d="M 90 25 Q 93 21 95 25 Q 97 21 100 25" fill="none" stroke="#059669" strokeWidth="1" strokeLinecap="round" />
-              <path d="M 110 32 Q 112 29 114 32 Q 116 29 118 32" fill="none" stroke="#059669" strokeWidth="1" strokeLinecap="round" />
-              
-              {/* Tiny tree */}
-              <line x1="75" y1="90" x2="75" y2="78" stroke="#047857" strokeWidth="2.5" />
-              <circle cx="75" cy="74" r="7" fill="#059669" />
-              <circle cx="71" cy="76" r="5" fill="#34d399" />
-            </g>
-          )}
-
-          {/* Medium Anxiety (Winds and Autumn) */}
-          {isMedium && (
-            <g>
-              {/* Hazy Sun */}
-              <circle cx="240" cy="45" r="15" fill="#fed7aa" opacity="0.8" />
-              
-              {/* Back Hill */}
-              <path d="M 0 120 Q 80 75 160 90 T 300 98 L 300 120 L 0 120 Z" fill="#fde047" opacity="0.5" />
-              
-              {/* Front Hill */}
-              <path d="M 0 120 Q 110 80 200 95 T 300 110 L 300 120 L 0 120 Z" fill="url(#hill-medium)" />
-              
-              {/* Wind Vectors */}
-              <path d="M 20 30 Q 80 15 130 25 T 200 15" fill="none" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="5,5" opacity="0.8" />
-              <path d="M 50 50 Q 110 40 170 45 T 250 35" fill="none" stroke="#cbd5e1" strokeWidth="1" opacity="0.6" />
-              
-              {/* Falling leaves */}
-              <path d="M 140 60 Q 142 55 145 60" fill="#d97706" opacity="0.8" />
-              <path d="M 180 70 Q 183 67 185 71" fill="#ea580c" opacity="0.8" />
-              
-              {/* Leaning Tree */}
-              <path d="M 90 98 Q 87 90 85 82" fill="none" stroke="#78350f" strokeWidth="2.5" strokeLinecap="round" />
-              {/* Leaf Cluster leaning left */}
-              <ellipse cx="82" cy="77" rx="8" ry="6" fill="#ea580c" transform="rotate(-15 82 77)" />
-              <ellipse cx="86" cy="73" rx="6" ry="5" fill="#fbbf24" transform="rotate(-15 86 73)" />
-            </g>
-          )}
-
-          {/* High Anxiety (Stormy horizon) */}
-          {isHigh && (
-            <g>
-              {/* Background gradient */}
-              <rect width="300" height="120" fill="url(#sky-high)" opacity="0.3" />
-              
-              {/* Back Mountain (Jagged) */}
-              <path d="M 0 120 L 40 85 L 90 100 L 150 70 L 220 95 L 300 75 L 300 120 Z" fill="#881337" opacity="0.4" />
-              
-              {/* Front Mountain */}
-              <path d="M 0 120 L 50 95 L 110 105 L 180 80 L 240 102 L 300 90 L 300 120 Z" fill="url(#hill-high)" />
-              
-              {/* Storm Cloud */}
-              <path d="M 120 30 Q 130 18 145 22 Q 155 12 170 18 Q 185 14 195 24 Q 205 28 200 38 Q 195 44 180 42 Q 165 44 150 42 Q 135 44 125 38 Z" fill="#475569" opacity="0.9" />
-              <path d="M 130 34 Q 138 24 150 27 Q 158 18 170 23 Q 180 20 188 28 Z" fill="#334155" opacity="0.95" />
-              
-              {/* Lightning Bolts */}
-              <path d="M 160 38 L 150 55 L 162 55 L 152 75" fill="none" stroke="#fde047" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" filter="drop-shadow(0px 0px 4px #fbbf24)" />
-              <path d="M 182 36 L 175 48 L 184 48 L 178 64" fill="none" stroke="#fde047" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" filter="drop-shadow(0px 0px 3px #fbbf24)" />
-              
-              {/* Rain lines */}
-              <line x1="130" y1="45" x2="120" y2="70" stroke="#94a3b8" strokeWidth="1" opacity="0.4" />
-              <line x1="145" y1="45" x2="135" y2="70" stroke="#94a3b8" strokeWidth="1" opacity="0.4" />
-              <line x1="165" y1="45" x2="155" y2="70" stroke="#94a3b8" strokeWidth="1" opacity="0.2" />
-              <line x1="190" y1="45" x2="180" y2="70" stroke="#94a3b8" strokeWidth="1" opacity="0.4" />
-              <line x1="205" y1="45" x2="195" y2="70" stroke="#94a3b8" strokeWidth="1" opacity="0.4" />
-            </g>
-          )}
-        </svg>
-      </div>
-    </div>
-  );
-}
-
-const mottos = [
-  "De-cluttering chaotic backlogs...",
-  "Visualizing cognitive workloads...",
-  "Empathetic companion by your side...",
-  "Your peace of mind, prioritized."
+/** @type {ReadonlyArray<string>} */
+const MOTTOS = [
+  'De-cluttering chaotic backlogs...',
+  'Visualizing cognitive workloads...',
+  'Empathetic companion by your side...',
+  'Your peace of mind, prioritized.',
 ];
 
+/**
+ * Root MindVane application component.
+ * Manages global state, routing between views, and API communication.
+ *
+ * @returns {JSX.Element}
+ */
 function App() {
   const [showIntro, setShowIntro] = useState(true);
   const [introProgress, setIntroProgress] = useState(0);
@@ -287,7 +157,7 @@ function App() {
     }, 25); // ~2.5s total loading time
 
     const mottoTimer = setInterval(() => {
-      setCurrentMottoIndex((prev) => (prev + 1) % mottos.length);
+      setCurrentMottoIndex((prev) => (prev + 1) % MOTTOS.length);
     }, 700);
 
     return () => {
@@ -296,16 +166,19 @@ function App() {
     };
   }, []);
 
+  /** @type {[string, function(string): void]} */
   const [exam, setExam] = useState('JEE');
+  /** @type {[string, function(string): void]} */
   const [mood, setMood] = useState('Anxious');
   const [journalText, setJournalText] = useState('');
   const [analysis, setAnalysis] = useState(null);
-  
+
   // Backlog Declutterer State
   const [rawBacklog, setRawBacklog] = useState('');
   const [declutterResult, setDeclutterResult] = useState(null);
   const [isLoadingDeclutter, setIsLoadingDeclutter] = useState(false);
-  const [view, setView] = useState('welcome'); // 'welcome' | 'launcher' | 'analyzer' | 'chat' | 'declutter'
+  /** @type {[string, function(string): void]} Routing state: 'welcome' | 'launcher' | 'analyzer' | 'chat' | 'declutter' */
+  const [view, setView] = useState('welcome');
   
   // Chat Companion State
   const [chatHistory, setChatHistory] = useState([
@@ -475,7 +348,14 @@ function App() {
     };
   };
 
-  // 1. Submit Journal for Analysis
+  /**
+   * Submits the journal entry to the backend for burnout analysis.
+   * On success, normalizes the API response and records the session to wellness history.
+   * Falls back to the offline simulation if the backend is unreachable.
+   *
+   * @param {React.FormEvent<HTMLFormElement>} e
+   * @returns {Promise<void>}
+   */
   const generateAnalysis = async (e) => {
     e.preventDefault();
     if (!journalText.trim()) return;
@@ -515,13 +395,19 @@ function App() {
         coping_strategy: data.coping_strategy || null
       };
       setAnalysis(normalizedData);
-      setFeedbackMsg("Analysis loaded from backend database.");
-    } catch (error) {
-      console.warn("Backend API not reachable. Running simulated UI response fallback...", error);
-      // Run offline simulation with the currently selected mood
+      // Persist entry to localStorage wellness history tracker
+      if (!normalizedData.risk_flagged) {
+        appendWellnessEntry({ exam, mood, anxietyScore: normalizedData.anxiety_score });
+      }
+      setFeedbackMsg('Analysis loaded from backend.');
+    } catch {
+      // Backend unreachable — run client-side emulation fallback
       const simulatedResult = runOfflineAnalysisSimulation(exam, journalText, mood);
       setAnalysis(simulatedResult);
-      setFeedbackMsg("Notice: Running in Client-side Emulated Mode (Offline Fallback)");
+      if (!simulatedResult.risk_flagged) {
+        appendWellnessEntry({ exam, mood, anxietyScore: simulatedResult.anxiety_score });
+      }
+      setFeedbackMsg('Notice: Running in Client-side Emulated Mode (Offline Fallback)');
     } finally {
       setIsLoadingAnalysis(false);
     }
@@ -706,7 +592,7 @@ function App() {
             {/* Cycling Mottos */}
             <div className="h-8 flex items-center justify-center">
               <p className="text-xs font-mono text-zinc-400 tracking-wide transition-all duration-300">
-                {mottos[currentMottoIndex]}
+                {MOTTOS[currentMottoIndex]}
               </p>
             </div>
 
@@ -727,7 +613,19 @@ function App() {
         </div>
       )}
 
-      <div className="min-h-screen bg-zinc-50 dark:bg-darkBg text-zinc-800 dark:text-gray-200 flex flex-col font-sans transition-colors duration-300 bg-dot-grid bg-mesh-gradient relative">
+      {/* Skip Navigation Link — keyboard and screen-reader accessibility */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[10000] focus:bg-accentPurple focus:text-white focus:px-4 focus:py-2 focus:rounded-xl focus:font-semibold focus:shadow-xl"
+      >
+        Skip to main content
+      </a>
+
+      <div
+        id="main-content"
+        role="main"
+        className="min-h-screen bg-zinc-50 dark:bg-darkBg text-zinc-800 dark:text-gray-200 flex flex-col font-sans transition-colors duration-300 bg-dot-grid bg-mesh-gradient relative"
+      >
       
       {/* 1. HEADER */}
       {view !== 'welcome' && (
@@ -954,8 +852,12 @@ function App() {
               </div>
             </div>
           </div>
+
+          {/* Wellness History Tracker \u2014 localStorage-backed session history */}
+          <WellnessHistory />
         </div>
       )}
+
 
       {/* C. Stress Analyzer View */}
       {view === 'analyzer' && (
@@ -983,34 +885,7 @@ function App() {
                 </div>
               </div>
 
-              {/* Mood Daily Log Selector */}
-              <div className="space-y-2">
-                <span className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                  Today&apos;s Mood Log
-                </span>
-                <div className="flex gap-2 flex-wrap">
-                  {MOOD_LIST.map((m) => {
-                    const isActive = mood === m.id;
-                    return (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => setMood(m.id)}
-                        aria-label={`Set mood to ${m.label}`}
-                        aria-pressed={isActive}
-                        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-all duration-200 hover:scale-[1.05] active:scale-95 ${
-                          isActive
-                            ? `${m.activeClass} shadow-md ring-2 ring-accentPurple/20`
-                            : 'bg-zinc-50 dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
-                        }`}
-                      >
-                        <span className="text-base leading-none">{m.emoji}</span>
-                        <span>{m.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <MoodSelector mood={mood} onMoodChange={setMood} />
 
               <div className="space-y-2">
                 <label htmlFor="journal-textarea" className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex justify-between">

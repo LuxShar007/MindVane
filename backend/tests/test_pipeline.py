@@ -266,3 +266,70 @@ def test_api_declutter_backlog_empty_rejection():
         }
     )
     assert response.status_code == 400
+
+
+def test_analyze_journal_accepts_mood_parameter():
+    """
+    Verify that the analyze-journal endpoint correctly accepts and processes
+    an optional 'mood' parameter without raising a server error.
+    All recognised mood values must return HTTP 200 with a valid response.
+    """
+    for mood_value in ("Happy", "Sad", "Anxious", "Tired", "Angry"):
+        response = client.post(
+            "/_/backend/api/analyze-journal",
+            json={
+                "exam": "JEE",
+                "journal_text": "Feeling overwhelmed with exam pressure and backlogs.",
+                "mood": mood_value,
+            },
+        )
+        assert response.status_code == 200, (
+            f"Expected HTTP 200 for mood='{mood_value}', got {response.status_code}"
+        )
+        data = response.json()
+        assert "anxiety_score" in data
+        assert 1 <= data["anxiety_score"] <= 100
+
+
+def test_analyze_journal_coping_strategy_in_response():
+    """
+    Verify that the burnout analysis response includes a 'coping_strategy' field
+    containing a non-empty string when mood context is provided.
+    This field enables the Hyper-Personalized Coping Strategy feature.
+    """
+    response = client.post(
+        "/_/backend/api/analyze-journal",
+        json={
+            "exam": "NEET",
+            "journal_text": "I am exhausted and anxious about biology mock results.",
+            "mood": "Anxious",
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "coping_strategy" in data, "Response must include 'coping_strategy' field"
+    assert isinstance(data["coping_strategy"], str)
+    assert len(data["coping_strategy"]) > 0, "coping_strategy must be a non-empty string"
+
+
+def test_analyze_journal_cuet_track_support():
+    """
+    Verify that the CUET exam track is accepted by the API endpoint and
+    processed without server-side errors. CUET was introduced alongside the
+    challenge alignment improvements.
+    """
+    response = client.post(
+        "/_/backend/api/analyze-journal",
+        json={
+            "exam": "CUET",
+            "journal_text": "I am preparing for CUET and feeling overwhelmed by the vast syllabus.",
+            "mood": "Tired",
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["risk_flagged"] is False
+    assert 1 <= data["anxiety_score"] <= 100
+    assert isinstance(data["emotional_trends"], list)
+    assert "mindfulness_exercise" in data
+
