@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Optional
 from enum import Enum
 
 class StudentTrack(str, Enum):
@@ -118,6 +118,7 @@ class ChatMessage(BaseModel):
 class ChatInput(BaseModel):
     message: str = Field(..., description="Latest user message")
     history: List[ChatMessage] = Field(..., description="Full chat history")
+    exam: Optional[str] = Field("JEE", description="Target exam context for the chat")
 
 class ChatResponse(BaseModel):
     reply: str = Field(..., description="Empathetic response from the companion")

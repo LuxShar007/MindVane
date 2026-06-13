@@ -121,13 +121,15 @@ async def chat_companion(payload: ChatInput) -> ChatResponse:
             "content": clean_payload_text(h.content)
         })
 
-    # Default to JEE context
-    exam_context = "JEE"
-    search_context = cleaned_message.lower() + " " + " ".join([h["content"].lower() for h in sanitized_history])
-    for exam in ["NEET", "CAT", "GATE", "UPSC", "BOARDS", "JEE"]:
-        if exam.lower() in search_context or ("board" in search_context and exam == "BOARDS"):
-            exam_context = exam
-            break
+    # Default to payload.exam context if available, otherwise search text or default to JEE
+    exam_context = clean_payload_text(payload.exam) if (hasattr(payload, 'exam') and payload.exam) else None
+    if not exam_context:
+        exam_context = "JEE"
+        search_context = cleaned_message.lower() + " " + " ".join([h["content"].lower() for h in sanitized_history])
+        for exam in ["NEET", "CAT", "GATE", "UPSC", "BOARDS", "JEE"]:
+            if exam.lower() in search_context or ("board" in search_context and exam == "BOARDS"):
+                exam_context = exam
+                break
 
     reply = chat_companion_with_gemini(cleaned_message, sanitized_history, exam_context)
     return ChatResponse(reply=reply)

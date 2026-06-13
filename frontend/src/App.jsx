@@ -467,18 +467,22 @@ function App() {
       }
 
       const data = await response.json();
+      const rawTriggers = Array.isArray(data.stress_triggers) 
+        ? data.stress_triggers 
+        : (Array.isArray(data.triggers) ? data.triggers : []);
+
       const normalizedData = {
-        risk_flagged: data.risk_flagged ?? data.riskFlagged ?? false,
-        anxiety_score: data.anxiety_score ?? data.anxietyScore ?? 50,
+        risk_flagged: !!(data.risk_flagged || data.riskFlagged),
+        anxiety_score: Number(data.anxiety_score || data.anxietyScore || 50),
         emotional_trends: Array.isArray(data.emotional_trends)
           ? data.emotional_trends
           : (data.primaryTrend ? [data.primaryTrend] : (data.primary_trend ? [data.primary_trend] : ["General stress"])),
-        stress_triggers: (data.stress_triggers ?? data.triggers ?? []).map(t => ({
-          trigger: t.trigger ?? t.name ?? "General performance strain",
-          impact: t.impact ?? "Medium"
+        stress_triggers: rawTriggers.map(t => ({
+          trigger: t.trigger || t.name || "General performance strain",
+          impact: t.impact || "Medium"
         })),
-        mindfulness_exercise: data.mindfulness_exercise ?? data.exercise ?? "Take a slow breath.",
-        encouragement: data.encouragement ?? "You are doing your best."
+        mindfulness_exercise: data.mindfulness_exercise || data.exercise || "Take a slow breath.",
+        encouragement: data.encouragement || "You are doing your best."
       };
       setAnalysis(normalizedData);
       setFeedbackMsg("Analysis loaded from backend database.");
@@ -514,7 +518,15 @@ function App() {
       }
 
       const data = await response.json();
-      setDeclutterResult(data);
+      const normalizedData = {
+        reassurance: data.reassurance || "Syllabus backlog breakdown complete.",
+        atomic_steps: (Array.isArray(data.atomic_steps) ? data.atomic_steps : []).map(step => ({
+          task_name: step.task_name || "Study key concepts",
+          estimated_minutes: Number(step.estimated_minutes || 0),
+          priority: step.priority || "Medium"
+        }))
+      };
+      setDeclutterResult(normalizedData);
       setFeedbackMsg("Backlog framework loaded from backend.");
     } catch (error) {
       console.warn("Backend API not reachable for declutter. Running simulated UI response fallback...", error);
@@ -573,7 +585,8 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           message: userMessageText,
-          history: updatedHistory
+          history: updatedHistory,
+          exam: exam
         })
       });
 
