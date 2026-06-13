@@ -36,8 +36,8 @@ MindVane/
 
 ```mermaid
 graph TD
-    User([Student / User]) <-->|Interacts (Journal, Chat)| FE[Vite + React Frontend]
-    FE -->|Requests: /_/backend/api/*| Vercel{Vercel Router}
+    User(["Student / User"]) <-->|Interacts| FE["Vite + React Frontend"]
+    FE -->|Requests: /_/backend/api/*| Vercel{"Vercel Router"}
     
     subgraph Frontend App
         FE
@@ -45,14 +45,14 @@ graph TD
     
     subgraph Vercel Cloud Routing
         Vercel -->|RoutePrefix: /| FE
-        Vercel -->|RoutePrefix: /_/backend| BE[FastAPI Backend]
+        Vercel -->|RoutePrefix: /_/backend| BE["FastAPI Backend"]
     end
 
     subgraph FastAPI Backend App
-        BE -->|1. Sanitization & Crisis Scan| Sec[app/security.py]
-        Sec -->|2. Analysis & Diagnostics| Eng[app/engine.py]
-        Eng -->|3. GenAI Processing| Gemini[Google Gemini API]
-        Eng -.->|Fallback if Offline| Sim[Simulated Sandbox]
+        BE -->|1. Sanitization & Crisis Scan| Sec["app/security.py"]
+        Sec -->|2. Analysis & Diagnostics| Eng["app/engine.py"]
+        Eng -->|3. GenAI Processing| Gemini["Google Gemini API"]
+        Eng -.->|Fallback if Offline| Sim["Simulated Sandbox"]
     end
 
     style FE fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#fff
