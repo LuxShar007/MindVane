@@ -144,7 +144,7 @@ function App() {
 
     // Empathetic encouragements
     const encouragements = [
-      `You are navigating an incredibly intense phase for ${targetExam}. Remember, your health and peace of mind are worth far more than any exam rank.`,
+      `You are navigating an incredibly intense phase for ${targetExam === 'BOARDS' ? 'your Board Exams' : targetExam}. Remember, your health and peace of mind are worth far more than any exam rank.`,
       `Taking it one topic, one page, or one hour at a time is enough. Please allow yourself to take a break today. You are doing your absolute best.`,
       `Burnout is a signal that your mind needs rest, not a sign of weakness. Be gentle with your expectations of yourself.`,
       `You have overcome tough papers and hard topics before. You are capable, but you are also human. Rest is productive too.`
@@ -336,6 +336,7 @@ function App() {
                 >
                   <option value="JEE">JEE (Joint Entrance Examination)</option>
                   <option value="NEET">NEET (National Eligibility cum Entrance Test)</option>
+                  <option value="BOARDS">Class 10 / 12 Board Exams (CBSE, ICSE, State Boards)</option>
                   <option value="CAT">CAT (Common Admission Test)</option>
                   <option value="GATE">GATE (Graduate Aptitude Test in Engineering)</option>
                   <option value="UPSC">UPSC (Union Public Service Commission)</option>

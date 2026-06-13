@@ -100,8 +100,9 @@ def generate_simulated_analysis(exam: str, text: str, risk_flagged: bool = False
         trends.extend(["Mild Performance Anxiety", "Exam Preparation Focus"])
 
     # Empathy encouraging statements
+    exam_name = "your Board Exams" if exam == "BOARDS" else exam
     encouragements = [
-        f"You are navigating an incredibly intense phase for {exam}. Remember, your health and peace of mind are worth far more than any exam rank.",
+        f"You are navigating an incredibly intense phase for {exam_name}. Remember, your health and peace of mind are worth far more than any exam rank.",
         "Taking it one topic, one page, or one hour at a time is enough. Please allow yourself to take a break today. You are doing your absolute best.",
         "Burnout is a signal that your mind needs rest, not a sign of weakness. Be gentle with your expectations of yourself.",
         "You have overcome tough papers and hard topics before. You are capable, but you are also human. Rest is productive too."
@@ -173,14 +174,15 @@ def chat_companion_with_gemini(message: str, history_list: list, exam: str) -> s
     if not client:
         # Generate simulated companion chat response
         lower_msg = message.lower()
+        exam_name = "Board Exams" if exam == "BOARDS" else exam
         if "sleep" in lower_msg or "tired" in lower_msg or "exhausted" in lower_msg:
-            return "Sleep is often the first thing we sacrifice under competitive exam pressure, yet it is the foundation of cognitive functioning. Try setting a hard 'digital sunset' tonight. Can you commit to resting 7 hours today?"
+            return "Sleep is often the first thing we sacrifice under intensive preparation pressure, yet it is the foundation of cognitive functioning. Try setting a hard 'digital sunset' tonight. Can you commit to resting 7 hours today?"
         elif "mock" in lower_msg or "marks" in lower_msg or "score" in lower_msg:
-            return f"Mock scores can feel like a direct verdict on your future, but they are actually diagnostic logs. They show you where to align your efforts for {exam}, not how smart you are. Let's make a plan to check your mistakes calmly."
+            return f"Practice scores can feel like a direct verdict on your future, but they are actually diagnostic logs. They show you where to align your efforts for {exam_name}, not how smart you are. Let's make a plan to check your mistakes calmly."
         elif "fail" in lower_msg or "fear" in lower_msg or "scared" in lower_msg:
-            return f"The fear of failure in examinations like {exam} is incredibly high due to social pressures. Try to decouple your identity from the outcome. You are a valuable person regardless of what sheet is printed on result day."
+            return f"The fear of failure in examinations like {exam_name} is incredibly high due to social pressures. Try to decouple your identity from the outcome. You are a valuable person regardless of what sheet is printed on result day."
         else:
-            return f"I hear you. The preparation journey for {exam} is grueling, and feeling this weight is part of the challenge. Tell me, what is one small thing you can control in your schedule right now to make you feel slightly more at peace?"
+            return f"I hear you. The preparation journey for {exam_name} is grueling, and feeling this weight is part of the challenge. Tell me, what is one small thing you can control in your schedule right now to make you feel slightly more at peace?"
 
     try:
         # Convert history list to Gemini's expected contents format

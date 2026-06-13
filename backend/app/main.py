@@ -58,8 +58,8 @@ async def chat_companion(payload: ChatInput):
     # Deduce target exam from text context, defaulting to standard JEE
     exam_context = "JEE"
     search_context = clean_message.lower() + " " + " ".join([h["content"].lower() for h in sanitized_history])
-    for exam in ["NEET", "CAT", "GATE", "UPSC", "JEE"]:
-        if exam.lower() in search_context:
+    for exam in ["NEET", "CAT", "GATE", "UPSC", "BOARDS", "JEE"]:
+        if exam.lower() in search_context or ("board" in search_context and exam == "BOARDS"):
             exam_context = exam
             break
 

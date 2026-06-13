@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import List
 
 class JournalInput(BaseModel):
-    exam: str = Field(..., description="Target exam (e.g. JEE, NEET, CAT, GATE, UPSC)")
+    exam: str = Field(..., description="Target exam or board exams (e.g. JEE, NEET, BOARDS, UPSC)")
     journal_text: str = Field(..., description="Self-reported text thoughts from the student")
 
 class StressTrigger(BaseModel):
