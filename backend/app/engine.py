@@ -75,6 +75,8 @@ def generate_burnout_analytics(exam: str, journal_entry: str) -> BurnoutAnalysis
     If suicidal ideation or self-harm warnings are present, you MUST set `risk_flagged` to true immediately.
     
     You must output a structured JSON strictly matching the BurnoutAnalysisResponse schema.
+    Be extremely precise and concise to minimize response latency.
+    Keep the exercise parameter under 2 sentences, encouragement parameter under 1 sentence, and each stress trigger name to 2-4 words.
     """
 
     client = get_genai_client()
@@ -91,7 +93,8 @@ def generate_burnout_analytics(exam: str, journal_entry: str) -> BurnoutAnalysis
                 temperature=0.1,  # Objective Diagnostic Calculation
                 response_mime_type="application/json",
                 response_schema=BurnoutAnalysisResponse,
-                system_instruction=system_instruction
+                system_instruction=system_instruction,
+                max_output_tokens=350
             )
         )
         
@@ -117,6 +120,7 @@ def generate_backlog_breakdown(exam: str, raw_backlog: str) -> DeclutterResponse
     De-clutter their syllabus backlog into EXACTLY 3 to 4 microscopic, low-friction actionable steps.
     Make each step highly specific, provide estimated_minutes (5 to 45 mins), and task priority ('High', 'Medium', 'Low').
     Include a warm, structuring reassurance sentence addressing their backlog overwhelm.
+    Be extremely precise and concise to minimize response latency: limit the reassurance to 1 sentence, and keep task names to 3-6 words.
     You must return a structured JSON strictly matching the DeclutterResponse schema.
     """
 
@@ -134,7 +138,8 @@ def generate_backlog_breakdown(exam: str, raw_backlog: str) -> DeclutterResponse
                 temperature=0.4,
                 response_mime_type="application/json",
                 response_schema=DeclutterResponse,
-                system_instruction=system_instruction
+                system_instruction=system_instruction,
+                max_output_tokens=300
             )
         )
         
@@ -293,14 +298,15 @@ def chat_companion_with_gemini(message: str, history_list: list, exam: str) -> s
         system_instruction = f"""
         You are an empathetic, compassionate mental health digital companion for students preparing for: {exam}.
         Your goal is to validate feelings, offer support, and suggest healthy cognitive strategies.
-        Keep responses warm, supportive, and relatively short. Never give clinical advice.
+        Keep responses warm, supportive, precise, and extremely short (strictly 1 to 2 sentences maximum). Do not use paragraphs or lists. Never give clinical advice.
         """
 
         response = client.models.generate_content(
             model='gemini-2.5-flash',
             contents=contents,
             config=types.GenerateContentConfig(
-                system_instruction=system_instruction
+                system_instruction=system_instruction,
+                max_output_tokens=120
             )
         )
         return response.text
