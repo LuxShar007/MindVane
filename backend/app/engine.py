@@ -2,7 +2,14 @@ import os
 import random
 from google import genai
 from google.genai import types
-from app.schemas import AnalysisResult, StressTrigger, LegacyStressTrigger
+from app.schemas import (
+    AnalysisResult, 
+    StressTrigger, 
+    LegacyStressTrigger, 
+    BurnoutAnalysisResponse, 
+    DeclutterResponse, 
+    AtomicStep
+)
 
 # Load .env file manually if it exists from potential relative directories
 env_paths = [
@@ -40,152 +47,240 @@ def get_genai_client():
         print(f"Warning: Failed to initialize Google GenAI Client: {e}")
         return None
 
-def generate_simulated_analysis(exam: str, text: str, risk_flagged: bool = False) -> AnalysisResult:
+# --- NEW FULL-STACK ENGINE FUNCTIONS ---
+
+def generate_burnout_analytics(exam: str, journal_entry: str) -> BurnoutAnalysisResponse:
     """
-    Client-side simulation engine in python. Matches front-end parameters
-    exactly to ensure fully verifiable test coverage even without API keys.
+    Analyze student journal entries for hidden burnout patterns using Gemini 2.5 Flash.
     """
-    if risk_flagged:
-        return AnalysisResult(
-            risk_flagged=True,
-            anxiety_score=96,
-            emotional_trends=["Critical Overwhelm", "Extreme Isolation", "Helplessness"],
-            stress_triggers=[
-                LegacyStressTrigger(trigger="Severe Exam Pressure Burden", impact="High"),
-                LegacyStressTrigger(trigger="Mental Health Emergency Trigger", impact="High")
-            ],
-            mindfulness_exercise="Emergency Safety Checklist: 1. Put away all books. 2. Contact one of the verified helplines immediately. 3. Sit near a window or drink cold water.",
-            encouragement="Please pause right now. Your exam preparation, score, and career milestone do not define your life. There are people trained to support you through this exact feeling. Reach out."
-        )
-
-    lowercase_text = text.lower()
-    base_score = 40
-    if len(text) > 50:
-        base_score += 10
-    if len(text) > 150:
-        base_score += 10
-    if "stress" in lowercase_text or "anxious" in lowercase_text or "pressure" in lowercase_text:
-        base_score += 12
-    if "fail" in lowercase_text or "backlog" in lowercase_text or "revision" in lowercase_text:
-        base_score += 10
-    if "sleep" in lowercase_text or "night" in lowercase_text or "tired" in lowercase_text or "insomnia" in lowercase_text:
-        base_score += 13
-    if "hopeless" in lowercase_text or "cannot" in lowercase_text or "give up" in lowercase_text:
-        base_score += 15
-
-    final_score = min(max(base_score, 15), 100)
-
-    triggers = []
-    if "sleep" in lowercase_text or "night" in lowercase_text or "tired" in lowercase_text:
-        triggers.append(LegacyStressTrigger(trigger="Sleep Quality Deprivation", impact="Severe"))
-    if "mock" in lowercase_text or "test" in lowercase_text or "marks" in lowercase_text or "score" in lowercase_text:
-        triggers.append(LegacyStressTrigger(trigger="Mock Exam Score Anxiety", impact="Severe"))
-    if "parent" in lowercase_text or "expect" in lowercase_text or "family" in lowercase_text:
-        triggers.append(LegacyStressTrigger(trigger="Socio-parental Pressure", impact="Elevated"))
-    if "revision" in lowercase_text or "syllabus" in lowercase_text or "backlog" in lowercase_text:
-        triggers.append(LegacyStressTrigger(trigger="Syllabus Accumulation Burden", impact="Elevated"))
-    if "focus" in lowercase_text or "concentrate" in lowercase_text or "distract" in lowercase_text:
-        triggers.append(LegacyStressTrigger(trigger="Cognitive Attentional Fatigue", impact="Moderate"))
-
-    if not triggers:
-        triggers.append(LegacyStressTrigger(trigger="General Competitive Exam Strain", impact="Moderate"))
-        triggers.append(LegacyStressTrigger(trigger="Academic Performance Goal Pressure", impact="Moderate"))
-
-    trends = []
-    if final_score >= 80:
-        trends.extend(["Severe Stress Loop", "Burnout State", "Extreme Exhaustion"])
-    elif final_score >= 55:
-        trends.extend(["Substantial Anxiety", "Revision Stress", "Mental fatigue"])
+    # 1. System instructions profiling based on Board exams vs Competitive exams
+    is_board = exam in ["CBSE_12TH", "STATE_BOARDS"] or "board" in exam.lower()
+    
+    if is_board:
+        profile_instruction = """
+        Focus on school Board Exams anxiety, perfectionism, rote learning fatigue, 
+        and parental/societal percentage benchmark stress.
+        """
     else:
-        trends.extend(["Mild Performance Anxiety", "Exam Preparation Focus"])
+        profile_instruction = """
+        Focus on Competitive Entrance Exams pressure, mock test percentile drops, 
+        relative ranking anxiety, and negative marking dread.
+        """
 
-    # Empathy encouraging statements
-    exam_name = "your Board Exams" if exam == "BOARDS" else exam
-    encouragements = [
-        f"You are navigating an incredibly intense phase for {exam_name}. Remember, your health and peace of mind are worth far more than any exam rank.",
-        "Taking it one topic, one page, or one hour at a time is enough. Please allow yourself to take a break today. You are doing your absolute best.",
-        "Burnout is a signal that your mind needs rest, not a sign of weakness. Be gentle with your expectations of yourself.",
-        "You have overcome tough papers and hard topics before. You are capable, but you are also human. Rest is productive too."
-    ]
-    selected_encouragement = random.choice(encouragements)
-
-    # Mindfulness exercises
-    exercises = [
-        "Square Breathing Technique: Inhale for 4 seconds, hold for 4 seconds, exhale for 4 seconds, hold for 4 seconds. Complete 4 rounds.",
-        "The 5-4-3-2-1 Grounding: Identify 5 things you see, 4 you feel, 3 you hear, 2 you smell, and 1 you taste around you.",
-        "Dual Mind Relaxer: List 5 items in your study room that are blue, then count backwards from 50 in intervals of 3.",
-        "Progressive Muscle Relax: Squeeze your fists tightly for 7 seconds, then let go completely. Experience the sensation of release."
-    ]
-    selected_exercise = random.choice(exercises)
-
-    return AnalysisResult(
-        risk_flagged=False,
-        anxiety_score=final_score,
-        emotional_trends=trends,
-        stress_triggers=triggers,
-        mindfulness_exercise=selected_exercise,
-        encouragement=selected_encouragement
-    )
-
-def analyze_journal_with_gemini(exam: str, text: str, risk_flagged: bool = False) -> AnalysisResult:
+    system_instruction = f"""
+    You are a supportive, expert mental health counselor for students. 
+    Profile Instruction: {profile_instruction}
+    
+    CRITICAL SAFETY REQUIREMENT: You must evaluate the student's entry for clinical self-harm or deep emotional crisis.
+    If suicidal ideation or self-harm warnings are present, you MUST set `risk_flagged` to true immediately.
+    
+    You must output a structured JSON strictly matching the BurnoutAnalysisResponse schema.
     """
-    Analyze the journal entry using Google Gemini SDK or local fallback.
-    """
-    if risk_flagged:
-        return generate_simulated_analysis(exam, text, risk_flagged=True)
 
     client = get_genai_client()
     if not client:
-        return generate_simulated_analysis(exam, text)
+        return get_simulated_burnout_analytics(exam, journal_entry)
 
     try:
-        prompt = f"""
-        You are a mental health expert and counselor analyzing a student's private journal entry.
-        The student is preparing for the competitive examination: {exam}.
-        Journal text entry: "{text}"
+        prompt = f"Syllabus Track: {exam}\nJournal Entry: {journal_entry}"
         
-        Analyze the entry to extract:
-        1. An anxiety score from 1 to 100 based on the verbal indicators of pressure, fatigue, hopelessness, sleeplessness, etc.
-        2. Top 2-3 emotional trend tags (e.g. 'Syllabus Anxiety', 'Chronic Fatigue', 'Determination', 'Imposter Syndrome').
-        3. A list of specific identified stress triggers with an impact rating ('Moderate', 'Elevated', 'Severe').
-        4. A specific customized mindfulness exercise or cognitive technique to help them disrupt their current stress cycle.
-        5. A warm, non-judgmental, exam-contextual empathetic encouragement message.
-        """
-
         response = client.models.generate_content(
             model='gemini-2.5-flash',
             contents=prompt,
             config=types.GenerateContentConfig(
+                temperature=0.1,  # Objective Diagnostic Calculation
                 response_mime_type="application/json",
-                response_schema=AnalysisResult,
-                system_instruction="You must analyze the text and output a valid JSON matching the specified schema. Keep triggers concise and realistic."
+                response_schema=BurnoutAnalysisResponse,
+                system_instruction=system_instruction
             )
         )
-        return AnalysisResult.model_validate_json(response.text)
+        
+        result = BurnoutAnalysisResponse.model_validate_json(response.text)
+        
+        # Override Wave configurations: anxiety Score > 60 -> '4Hz Theta Waves', else -> '40Hz Gamma Waves'
+        if result.anxietyScore > 60:
+            result.recommended_wave = '4Hz Theta Waves'
+        else:
+            result.recommended_wave = '40Hz Gamma Waves'
+            
+        return result
     except Exception as e:
-        print(f"Google GenAI Call failed, falling back to simulation: {e}")
-        return generate_simulated_analysis(exam, text)
+        print(f"GenAI generate_burnout_analytics failed, falling back: {e}")
+        return get_simulated_burnout_analytics(exam, journal_entry)
+
+def generate_backlog_breakdown(exam: str, raw_backlog: str) -> DeclutterResponse:
+    """
+    Break down chaotic syllabus backlogs into microscopic actionable steps.
+    """
+    system_instruction = f"""
+    You are a student cognitive coach helping a student preparing for {exam}.
+    De-clutter their syllabus backlog into EXACTLY 3 to 4 microscopic, low-friction actionable steps.
+    Make each step highly specific, provide estimated_minutes (5 to 45 mins), and task priority ('High', 'Medium', 'Low').
+    Include a warm, structuring reassurance sentence addressing their backlog overwhelm.
+    You must return a structured JSON strictly matching the DeclutterResponse schema.
+    """
+
+    client = get_genai_client()
+    if not client:
+        return get_simulated_backlog_breakdown(exam, raw_backlog)
+
+    try:
+        prompt = f"Student Backlog: {raw_backlog}"
+        
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.4,
+                response_mime_type="application/json",
+                response_schema=DeclutterResponse,
+                system_instruction=system_instruction
+            )
+        )
+        
+        result = DeclutterResponse.model_validate_json(response.text)
+        
+        # Enforce exactly 3-4 steps constraint
+        if len(result.atomic_steps) < 3 or len(result.atomic_steps) > 4:
+            result.atomic_steps = result.atomic_steps[:4]
+            while len(result.atomic_steps) < 3:
+                result.atomic_steps.append(AtomicStep(
+                    task_name="Revise standard high-yield equations page",
+                    estimated_minutes=15,
+                    priority="Medium"
+                ))
+                
+        return result
+    except Exception as e:
+        print(f"GenAI generate_backlog_breakdown failed, falling back: {e}")
+        return get_simulated_backlog_breakdown(exam, raw_backlog)
+
+# --- RESILIENT SANDBOX FALLBACKS ---
+
+def get_simulated_burnout_analytics(exam: str, journal_entry: str) -> BurnoutAnalysisResponse:
+    """
+    Simulate burnout analytics for local sandbox development.
+    """
+    from app.security import scan_for_crisis
+    risk_flagged = scan_for_crisis(journal_entry)
+
+    if risk_flagged:
+        return BurnoutAnalysisResponse(
+            anxietyScore=95,
+            primaryTrend="Critical Overwhelm State",
+            triggers=[
+                StressTrigger(name="Severe Academic Load", impact="Severe"),
+                StressTrigger(name="Emotional Burnout Threshold", impact="Severe")
+            ],
+            exercise="Self-Care Checklist: Put books away, sip cool water, and contact helpline.",
+            encouragement="Your safety and health are more valuable than any milestone. Please reach out.",
+            recommended_wave="4Hz Theta Waves",
+            risk_flagged=True
+        )
+
+    lowercase_text = journal_entry.lower()
+    base_score = 42
+    if len(journal_entry) > 100:
+        base_score += 15
+    if "fail" in lowercase_text or "anxious" in lowercase_text or "stressed" in lowercase_text:
+        base_score += 18
+    if "sleep" in lowercase_text or "tired" in lowercase_text:
+        base_score += 12
+
+    score = min(max(base_score, 10), 100)
+    wave = '4Hz Theta Waves' if score > 60 else '40Hz Gamma Waves'
+    
+    is_board = exam in ["CBSE_12TH", "STATE_BOARDS"] or "board" in exam.lower()
+    trend = "School Perfectionism Fatigue" if is_board else "Competitive Percentile Pressure"
+
+    triggers = []
+    if "sleep" in lowercase_text or "tired" in lowercase_text:
+        triggers.append(StressTrigger(name="Sleep Deprivation Study Loop", impact="High"))
+    if "revision" in lowercase_text or "backlog" in lowercase_text:
+        triggers.append(StressTrigger(name="Syllabus Backlog Burden", impact="High"))
+
+    if not triggers:
+        triggers.append(StressTrigger(name="General Course Schedule Strain", impact="Medium"))
+
+    return BurnoutAnalysisResponse(
+        anxietyScore=score,
+        primaryTrend=trend,
+        triggers=triggers,
+        exercise="Try box breathing: Inhale 4s, hold 4s, exhale 4s, hold 4s. Repeat 4 times.",
+        encouragement="Take it one subject at a time. Academic pressure is intense, but you are resilient.",
+        recommended_wave=wave,
+        risk_flagged=False
+    )
+
+def get_simulated_backlog_breakdown(exam: str, raw_backlog: str) -> DeclutterResponse:
+    """
+    Simulate backlog de-clutter for local sandbox development.
+    """
+    return DeclutterResponse(
+        reassurance="Syllabus overload causes immediate paralysis. Break this block down to clear the pressure.",
+        atomic_steps=[
+            AtomicStep(
+                task_name=f"Open one chapter of {exam} backlog and list top 3 core topics",
+                estimated_minutes=15,
+                priority="High"
+            ),
+            AtomicStep(
+                task_name="Solve exactly 2 simple previous year questions for the first topic",
+                estimated_minutes=25,
+                priority="High"
+            ),
+            AtomicStep(
+                task_name="Close books and summarize formula details from memory in 5 minutes",
+                estimated_minutes=10,
+                priority="Medium"
+            )
+        ]
+    )
+
+# --- BACKWARDS COMPATIBILITY WRAPPERS ---
+
+def analyze_journal_with_gemini(exam: str, text: str, risk_flagged: bool = False) -> AnalysisResult:
+    """
+    Wrapper mapping the new BurnoutAnalysisResponse schemas to the legacy AnalysisResult payload format.
+    """
+    # Safety keywords override
+    from app.security import scan_for_crisis
+    flagged = risk_flagged or scan_for_crisis(text)
+    
+    analytics = generate_burnout_analytics(exam, text)
+    
+    legacy_triggers = []
+    for t in analytics.triggers:
+        legacy_triggers.append(LegacyStressTrigger(trigger=t.name, impact=t.impact))
+        
+    return AnalysisResult(
+        risk_flagged=analytics.risk_flagged or flagged,
+        anxiety_score=analytics.anxietyScore,
+        emotional_trends=[analytics.primaryTrend],
+        stress_triggers=legacy_triggers,
+        mindfulness_exercise=analytics.exercise,
+        encouragement=analytics.encouragement
+    )
 
 def chat_companion_with_gemini(message: str, history_list: list, exam: str) -> str:
     """
-    Converse with the student using Google Gemini SDK or local fallback.
+    Empathetic chatbot companion using Google GenAI SDK.
     """
     client = get_genai_client()
     if not client:
-        # Generate simulated companion chat response
+        # Simulated chat companion fallback
         lower_msg = message.lower()
-        exam_name = "Board Exams" if exam == "BOARDS" else exam
+        exam_name = "Board Exams" if exam in ["CBSE_12TH", "STATE_BOARDS"] else exam
         if "sleep" in lower_msg or "tired" in lower_msg or "exhausted" in lower_msg:
-            return "Sleep is often the first thing we sacrifice under intensive preparation pressure, yet it is the foundation of cognitive functioning. Try setting a hard 'digital sunset' tonight. Can you commit to resting 7 hours today?"
+            return "Sleep is often the first thing we sacrifice under intensive preparation pressure. Try setting a hard digital sunset tonight. Can you commit to resting 7 hours?"
         elif "mock" in lower_msg or "marks" in lower_msg or "score" in lower_msg:
-            return f"Practice scores can feel like a direct verdict on your future, but they are actually diagnostic logs. They show you where to align your efforts for {exam_name}, not how smart you are. Let's make a plan to check your mistakes calmly."
+            return f"Practice scores are diagnostic logs showing where to align your efforts for {exam_name}, not a rating of your intelligence."
         elif "fail" in lower_msg or "fear" in lower_msg or "scared" in lower_msg:
-            return f"The fear of failure in examinations like {exam_name} is incredibly high due to social pressures. Try to decouple your identity from the outcome. You are a valuable person regardless of what sheet is printed on result day."
+            return f"The fear of failure in examinations like {exam_name} is normal due to expectations. Try to decouple your identity from the test results."
         else:
-            return f"I hear you. The preparation journey for {exam_name} is grueling, and feeling this weight is part of the challenge. Tell me, what is one small thing you can control in your schedule right now to make you feel slightly more at peace?"
+            return f"I hear you. The preparation journey for {exam_name} takes massive energy. What is one small thing you can control right now?"
 
     try:
-        # Convert history list to Gemini's expected contents format
         contents = []
         for h in history_list:
             role = h.role if hasattr(h, 'role') else h.get('role', 'user')
@@ -193,14 +288,12 @@ def chat_companion_with_gemini(message: str, history_list: list, exam: str) -> s
             gemini_role = "user" if role == "user" else "model"
             contents.append(types.Content(role=gemini_role, parts=[types.Part.from_text(text=content)]))
 
-        # Append new message
         contents.append(types.Content(role="user", parts=[types.Part.from_text(text=message)]))
 
         system_instruction = f"""
-        You are an empathetic, compassionate mental health digital companion for competitive exam students (such as JEE, NEET, UPSC, GATE, CAT).
-        The student you are talking to is preparing for: {exam}.
-        Your goal is to actively listen, validate their feelings, offer gentle exam-specific counseling support, and suggest healthy cognitive strategies.
-        Keep your responses supportive, warm, relatively short, and grounded. Never diagnose medical conditions or give clinical advice.
+        You are an empathetic, compassionate mental health digital companion for students preparing for: {exam}.
+        Your goal is to validate feelings, offer support, and suggest healthy cognitive strategies.
+        Keep responses warm, supportive, and relatively short. Never give clinical advice.
         """
 
         response = client.models.generate_content(
@@ -212,5 +305,5 @@ def chat_companion_with_gemini(message: str, history_list: list, exam: str) -> s
         )
         return response.text
     except Exception as e:
-        print(f"Google GenAI Chat Call failed, falling back: {e}")
-        return f"I hear your thoughts about this. Preparing for {exam} takes a lot of mental energy, and feeling this pressure is completely natural. Let's focus on taking a small step. What is one tiny study task you want to work on next?"
+        print(f"GenAI companion chat failed, falling back: {e}")
+        return "I hear you. Preparing for exams takes a lot of mental energy. Let's focus on taking a small step today."

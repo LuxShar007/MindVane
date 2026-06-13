@@ -98,3 +98,37 @@ def test_empty_payload_rejection():
         }
     )
     assert response.status_code == 400
+
+def test_engine_generate_burnout_analytics():
+    """
+    Verify engine burnout analytics logic for Board and Competitive tracks.
+    """
+    from app.engine import generate_burnout_analytics
+    from app.schemas import BurnoutAnalysisResponse
+    
+    # Test Competitive Exam Path
+    result = generate_burnout_analytics("JEE", "I feel so stressed about mock ranks and percentile drop.")
+    assert isinstance(result, BurnoutAnalysisResponse)
+    assert 1 <= result.anxietyScore <= 100
+    assert result.risk_flagged is False
+    assert result.recommended_wave in ['4Hz Theta Waves', '40Hz Gamma Waves']
+    
+    # Test Board Exam Path
+    result_board = generate_burnout_analytics("CBSE_12TH", "I am exhausted by parental expectation and percentage pressure.")
+    assert isinstance(result_board, BurnoutAnalysisResponse)
+    assert 1 <= result_board.anxietyScore <= 100
+
+def test_engine_generate_backlog_breakdown():
+    """
+    Verify backlog declutter breakdown outputs.
+    """
+    from app.engine import generate_backlog_breakdown
+    from app.schemas import DeclutterResponse
+    
+    result = generate_backlog_breakdown("JEE", "Backlog: 5 physics chapters, 3 chemistry chapters.")
+    assert isinstance(result, DeclutterResponse)
+    assert 3 <= len(result.atomic_steps) <= 4
+    for step in result.atomic_steps:
+        assert step.task_name is not None
+        assert step.estimated_minutes >= 0
+        assert step.priority in ["High", "Medium", "Low"]
