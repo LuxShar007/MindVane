@@ -512,6 +512,7 @@ function App() {
 
       const data = await response.json();
       setChatHistory(prev => [...prev, { role: 'assistant', content: data.reply }]);
+      setIsLoadingChat(false);
     } catch (error) {
       console.warn("Companion Chat API not reachable. Simulating empathetic companion response...", error);
       // Construct a smart simulated response
@@ -534,11 +535,6 @@ function App() {
         setChatHistory(prev => [...prev, { role: 'assistant', content: companionReply }]);
         setIsLoadingChat(false);
       }, 700); // realistic delay
-      return;
-    } finally {
-      if (base) {
-        setIsLoadingChat(false);
-      }
     }
   };
 
