@@ -299,10 +299,10 @@ function App() {
     <div className="min-h-screen bg-zinc-50 dark:bg-darkBg text-zinc-800 dark:text-gray-200 flex flex-col font-sans transition-colors duration-300 bg-dot-grid bg-mesh-gradient relative">
       
       {/* 1. HEADER */}
-      <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex items-center justify-between transition-colors duration-300">
+      <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex items-center justify-between transition-colors duration-300 no-print">
         <div className="flex items-center space-x-3">
-          <div className="p-2 bg-accentPurple/10 border border-accentPurple/30 rounded-xl">
-            <Brain className="h-6 w-6 text-accentPurple animate-pulse" />
+          <div className="p-0.5 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-white/50 dark:bg-zinc-950/50">
+            <img src="/logo.png" alt="MindVane Logo" className="h-9 w-9 rounded-lg" />
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-accentPurple to-accentMagenta inline neon-glow-purple">
@@ -329,13 +329,13 @@ function App() {
       </header>
 
       {/* 2. MAIN SPLIT-SCREEN DASHBOARD */}
-      <main className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <main className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 print:block print:p-0">
         
         {/* LEFT COLUMN: JOURNAL INPUT & STRESS ANALYSIS (7 cols) */}
-        <section className="lg:col-span-7 flex flex-col space-y-6">
+        <section className="lg:col-span-7 flex flex-col space-y-6 print:col-span-12 print:w-full">
           
           {/* Journal Form Card */}
-          <div className="bg-white dark:bg-[#121212] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl p-6 shadow-xl dark:shadow-2xl relative overflow-hidden transition-all duration-300 hover:shadow-accentPurple/5 dark:hover:shadow-accentPurple/5">
+          <div className="bg-white dark:bg-[#121212] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl p-6 shadow-xl dark:shadow-2xl relative overflow-hidden transition-all duration-300 hover:shadow-accentPurple/5 dark:hover:shadow-accentPurple/5 no-print">
             <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
               <Compass className="w-40 h-40 text-accentPurple" />
             </div>
@@ -485,7 +485,37 @@ function App() {
             ) : (
 
               /* STRESS ANALYTICS VISUALIZATION DASHBOARD */
-              <div className="space-y-6">
+              <div className="space-y-6 print:space-y-4">
+                
+                {/* Print-Only Header */}
+                <div className="hidden print:flex items-center justify-between border-b border-zinc-200 pb-4 mb-4">
+                  <div className="flex items-center gap-3">
+                    <img src="/logo.png" alt="MindVane Logo" className="h-10 w-10 rounded-xl border border-zinc-200" />
+                    <div>
+                      <h2 className="text-xl font-bold text-zinc-900">MindVane Diagnostics Report</h2>
+                      <p className="text-[10px] text-zinc-500 font-mono">Burnout Tracker & Student Health Companion</p>
+                    </div>
+                  </div>
+                  <div className="text-right text-xs text-zinc-600">
+                    <div><strong>Target Exam:</strong> {exam}</div>
+                    <div><strong>Date Generated:</strong> {new Date().toLocaleDateString()}</div>
+                  </div>
+                </div>
+
+                {/* On-Screen Export Button Panel */}
+                <div className="flex items-center justify-between no-print bg-white dark:bg-[#121212] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl p-4 shadow-sm">
+                  <div>
+                    <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Diagnostics Summary</h3>
+                    <p className="text-xs text-zinc-500">Generate a portable report of your active analysis.</p>
+                  </div>
+                  <button
+                    onClick={() => window.print()}
+                    className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-accentPurple to-accentMagenta hover:from-accentPurple/95 hover:to-accentMagenta/95 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-95 duration-150"
+                  >
+                    <Activity className="h-3.5 w-3.5" />
+                    <span>Save Report (PDF)</span>
+                  </button>
+                </div>
                 
                 {/* Visualizations Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -608,7 +638,7 @@ function App() {
           </div>
 
         </section>
-        <section className="lg:col-span-5 bg-white dark:bg-[#121212] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl flex flex-col shadow-xl dark:shadow-2xl overflow-hidden min-h-[500px] lg:h-[calc(100vh-140px)] transition-all duration-300 hover:shadow-accentMagenta/5 dark:hover:shadow-accentMagenta/5">
+        <section className="lg:col-span-5 bg-white dark:bg-[#121212] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl flex flex-col shadow-xl dark:shadow-2xl overflow-hidden min-h-[500px] lg:h-[calc(100vh-140px)] transition-all duration-300 hover:shadow-accentMagenta/5 dark:hover:shadow-accentMagenta/5 no-print">
           
           {/* Chat Header */}
           <div className="px-5 py-4 border-b border-zinc-200 dark:border-zinc-800/80 bg-zinc-50 dark:bg-[#151515]/60 flex items-center justify-between transition-colors duration-300">
@@ -706,7 +736,7 @@ function App() {
       </main>
 
       {/* 3. FOOTER */}
-      <footer className="border-t border-zinc-200 dark:border-zinc-900 bg-white/60 dark:bg-black/60 py-4 px-6 text-center text-[10px] text-zinc-500 dark:text-zinc-600 font-mono mt-auto flex flex-col sm:flex-row items-center justify-between gap-2 max-w-7xl w-full mx-auto transition-colors duration-300">
+      <footer className="border-t border-zinc-200 dark:border-zinc-900 bg-white/60 dark:bg-black/60 py-4 px-6 text-center text-[10px] text-zinc-500 dark:text-zinc-600 font-mono mt-auto flex flex-col sm:flex-row items-center justify-between gap-2 max-w-7xl w-full mx-auto transition-colors duration-300 no-print">
         <p>© 2026 MindVane Micro-App. Created under Principal UI/UX accessibility guidelines.</p>
         <p className="flex items-center space-x-1.5">
           <Heart className="h-3 w-3 text-accentMagenta fill-accentMagenta" />

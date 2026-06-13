@@ -84,3 +84,32 @@
   background-image: radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
 }
 
+/* Print Media Rules for PDF Export functionality */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body, html {
+    background: white !important;
+    color: #09090b !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Ensure stress cards print cleanly in black/white mode with high contrast */
+  body div, body section, body ul, body li {
+    background: #ffffff !important;
+    color: #09090b !important;
+    border-color: #d4d4d8 !important;
+    box-shadow: none !important;
+  }
+  
+  /* Force text contrast */
+  .text-zinc-800, .text-zinc-700, .text-zinc-600, .text-zinc-500,
+  .dark .text-gray-200, .dark .text-gray-300, .dark .text-zinc-400 {
+    color: #09090b !important;
+  }
+}
+
+

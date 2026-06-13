@@ -1,4 +1,4 @@
-# MindVane | Student Burnout Tracker & Mental Health Companion
+# <img src="logo.png" align="right" width="100" /> MindVane | Student Burnout Tracker & Mental Health Companion
 
 MindVane is a highly responsive, accessible mental health micro-app designed for competitive examination students (JEE, NEET, CAT, GATE, UPSC) to discover hidden academic stress patterns and converse with an empathetic digital companion in real-time.
 
