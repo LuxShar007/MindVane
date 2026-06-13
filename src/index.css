@@ -1,0 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-darkBg text-gray-300 antialiased selection:bg-accentPurple/30 selection:text-white font-sans;
+    background-color: #0d0d0d;
+  }
+}
+
+/* Custom Webkit Scrollbar for premium dark-mode feeling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0d0d0d;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #262626;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+/* Blinking scarlet glow for Crisis Mode */
+@keyframes blink-scarlet {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(220, 38, 38, 0.4);
+    border-color: rgba(220, 38, 38, 0.8);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(220, 38, 38, 0.8);
+    border-color: rgba(220, 38, 38, 1);
+  }
+}
+
+.animate-blink-scarlet {
+  animation: blink-scarlet 1.5s infinite;
+}
+
+/* Neon glow for headers */
+.neon-glow-purple {
+  text-shadow: 0 0 10px rgba(168, 85, 247, 0.5), 0 0 20px rgba(168, 85, 247, 0.2);
+}
+
+.neon-glow-magenta {
+  text-shadow: 0 0 10px rgba(236, 72, 153, 0.5), 0 0 20px rgba(236, 72, 153, 0.2);
+}
