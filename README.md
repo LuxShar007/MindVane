@@ -1,16 +1,95 @@
-# React + Vite
+# MindVane | Student Burnout Tracker & Mental Health Companion
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+MindVane is a highly responsive, accessible mental health micro-app designed for competitive examination students (JEE, NEET, CAT, GATE, UPSC) to discover hidden academic stress patterns and converse with an empathetic digital companion in real-time.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 📂 Architecture Layout
 
-## React Compiler
+```
+MindVane/
+├── backend/                  # Dedicated Python FastAPI Backend Service
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py           # FastAPI application entry point & routes
+│   │   ├── schemas.py        # Pydantic input/output schemas
+│   │   ├── security.py       # HTML sanitization & self-harm keyword scanning
+│   │   └── engine.py         # Google GenAI SDK integration & simulated fallbacks
+│   ├── tests/
+│   │   ├── __init__.py
+│   │   └── test_pipeline.py  # Automated Python unit tests (critical)
+│   └── requirements.txt      # Python dependencies
+│
+├── frontend/                 # Vite + React Frontend App
+│   ├── dist/                 # Static compiled assets
+│   ├── public/               # Static assets & SVG icons
+│   ├── src/                  # App components, App.jsx, index.css, main.jsx
+│   ├── index.html            # Entry HTML with SEO tags
+│   ├── tailwind.config.js    # Neon dark mode configurations
+│   ├── vite.config.js        # Vite bundler parameters
+│   └── package.json          # React dependencies
+│
+└── README.md                 # Root instructions layout (this file)
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 🛠️ Installation & Setup
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 1. Python FastAPI Backend Service (`backend/`)
+
+Navigate to the backend directory and set up a virtual environment:
+
+```bash
+cd backend
+python -m venv venv
+# Activate virtual environment
+# Windows (PowerShell):
+.\venv\Scripts\Activate.ps1
+# Windows (CMD):
+.\venv\Scripts\activate.bat
+# Linux/macOS:
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+Run the backend development server:
+
+```bash
+uvicorn app.main:app --reload --port 8000
+```
+The backend API will be available locally at `http://localhost:8000`.
+
+*Note: Set the `GEMINI_API_KEY` environment variable to connect to the live Google Gemini models. If unset, the backend will gracefully run in Sandbox Simulation mode.*
+
+### 2. Vite + React Frontend App (`frontend/`)
+
+Navigate to the frontend directory:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+The frontend application will boot locally at `http://localhost:5173`.
+
+---
+
+## 🧪 Automated Unit Testing (Python)
+
+To verify the endpoints, data schemas, security guardrails, and simulation fallbacks, run `pytest` inside the `backend` directory:
+
+```bash
+cd backend
+pytest
+```
+
+---
+
+## 🌐 Production & Vercel Context Routing
+
+The frontend dynamically detects its runtime environment:
+*   In **Local Development** (`localhost`), api requests point to `http://localhost:8000/_/backend/api/...`
+*   In **Production** (e.g. Vercel deployment), api requests use relative routes pointing to `/_/backend/api/...`
