@@ -295,9 +295,7 @@ def chat_companion_with_gemini(message: str, history_list: List[Any], exam: str)
     """
     Empathetic chatbot companion using Google GenAI SDK.
     """
-    client = get_genai_client()
-    if not client:
-        # Simulated chat companion fallback
+    def run_simulation() -> str:
         lower_msg = message.lower()
         exam_name = "Board Exams" if exam in ["CBSE_12TH", "STATE_BOARDS"] else exam
         
@@ -305,7 +303,6 @@ def chat_companion_with_gemini(message: str, history_list: List[Any], exam: str)
         last_assistant_msg = ""
         if history_list:
             for h in reversed(history_list):
-                # history_list elements might be pydantic objects or dicts
                 role = h.role if hasattr(h, 'role') else h.get('role', 'user')
                 content = h.content if hasattr(h, 'content') else h.get('content', '')
                 if role in ['assistant', 'model']:
@@ -388,7 +385,17 @@ def chat_companion_with_gemini(message: str, history_list: List[Any], exam: str)
             else:
                 return "It's a journey to decouple our worth from test scores. Keep reminding yourself that you are worthy regardless of the outcome. What else is on your mind?"
                 
-        # 9. Standard keyword matching if no active follow-up context
+        # 9. Routine habit checks (e.g. sleep timings, meals, study breaks, workspace)
+        elif any(time in lower_msg for time in ["12 am", "12pm", "midnight", "1 am", "2 am", "3 am", "sleep late", "late night study"]):
+            return "Sleeping after 11 PM or around midnight disrupts deep REM cycles, which are critical for memory consolidation. Try to shift your bedtime to 9-10 PM for better recovery."
+        elif any(phrase in lower_msg for phrase in ["skip meal", "skip breakfast", "skip lunch", "skip dinner", "no time to eat", "not eating"]):
+            return "Your brain requires a steady supply of glucose to maintain focus and recall. Never skip meals during intense prep; keep healthy snacks nearby."
+        elif any(phrase in lower_msg for phrase in ["study straight", "study for hours", "without break", "no breaks", "studying continuously"]):
+            return "Studying for long stretches without resting causes cognitive saturation. Try the Pomodoro technique: study for 50 minutes, then take a strict 10-minute rest."
+        elif any(phrase in lower_msg for phrase in ["study on bed", "study in bed", "lying down", "lay down"]):
+            return "Studying in bed signals to your brain that it is time to sleep, reducing concentration. Try sitting at a dedicated study desk or table."
+
+        # 10. Standard keyword matching if no active follow-up context
         elif "sleep" in lower_msg or "tired" in lower_msg or "exhausted" in lower_msg or "insomnia" in lower_msg or "fatigue" in lower_msg:
             return "Sleep is often the first thing we sacrifice under intensive preparation pressure. Try setting a hard digital sunset tonight. Can you commit to resting 7 hours today?"
         elif "mock" in lower_msg or "marks" in lower_msg or "score" in lower_msg or "percentile" in lower_msg or "rank" in lower_msg:
@@ -397,6 +404,10 @@ def chat_companion_with_gemini(message: str, history_list: List[Any], exam: str)
             return f"The fear of failure in examinations like {exam_name} is normal due to expectations. Try to decouple your identity from the results."
         else:
             return f"I hear you. The preparation journey for {exam_name} takes massive energy. What is one small thing you can control in your schedule right now to make you feel slightly more at peace?"
+
+    client = get_genai_client()
+    if not client:
+        return run_simulation()
 
     try:
         contents = []
@@ -410,7 +421,8 @@ def chat_companion_with_gemini(message: str, history_list: List[Any], exam: str)
 
         system_instruction = f"""
         You are an empathetic, compassionate mental health digital companion for students preparing for: {exam}.
-        Your goal is to validate feelings, offer support, and suggest healthy cognitive strategies.
+        Your goal is to validate feelings, offer support, suggest healthy cognitive strategies, and gently correct unhealthy daily routine habits described by the student (such as sleeping too late, e.g., at 12 AM/midnight or later instead of the recommended 9-10 PM; skipping meals; studying on the bed; or studying without regular breaks).
+        Provide clear, constructive recommendations on how to adjust their routine to optimize their mental well-being and cognitive performance.
         Keep responses warm, supportive, precise, and extremely short (strictly 1 to 2 sentences maximum). Do not use paragraphs or lists. Never give clinical advice.
         """
 
@@ -419,10 +431,10 @@ def chat_companion_with_gemini(message: str, history_list: List[Any], exam: str)
             contents=contents,
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
-                max_output_tokens=120
+                max_output_tokens=150
             )
         )
         return response.text
     except Exception as e:
-        print(f"GenAI companion chat failed, falling back: {e}")
-        return "I hear you. Preparing for exams takes a lot of mental energy. Let's focus on taking a small step today."
+        print(f"GenAI companion chat failed, falling back to simulation: {e}")
+        return run_simulation()

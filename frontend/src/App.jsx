@@ -603,7 +603,17 @@ function App() {
           companionReply = "It's a journey to decouple our worth from test scores. Keep reminding yourself that you are worthy regardless of the outcome. What else is on your mind?";
         }
       }
-      // 9. Standard keyword matching if no active follow-up context
+      // 9. Routine habit checks (e.g. sleep timings, meals, study breaks, workspace)
+      else if (["12 am", "12pm", "midnight", "1 am", "2 am", "3 am", "sleep late", "late night study"].some(time => lowerMsg.includes(time))) {
+        companionReply = "Sleeping after 11 PM or around midnight disrupts deep REM cycles, which are critical for memory consolidation. Try to shift your bedtime to 9-10 PM for better recovery.";
+      } else if (["skip meal", "skip breakfast", "skip lunch", "skip dinner", "no time to eat", "not eating"].some(phrase => lowerMsg.includes(phrase))) {
+        companionReply = "Your brain requires a steady supply of glucose to maintain focus and recall. Never skip meals during intense prep; keep healthy snacks nearby.";
+      } else if (["study straight", "study for hours", "without break", "no breaks", "studying continuously"].some(phrase => lowerMsg.includes(phrase))) {
+        companionReply = "Studying for long stretches without resting causes cognitive saturation. Try the Pomodoro technique: study for 50 minutes, then take a strict 10-minute rest.";
+      } else if (["study on bed", "study in bed", "lying down", "lay down"].some(phrase => lowerMsg.includes(phrase))) {
+        companionReply = "Studying in bed signals to your brain that it is time to sleep, reducing concentration. Try sitting at a dedicated study desk or table.";
+      }
+      // 10. Standard keyword matching if no active follow-up context
       else if (lowerMsg.includes('sleep') || lowerMsg.includes('tired') || lowerMsg.includes('exhausted') || lowerMsg.includes('insomnia') || lowerMsg.includes('fatigue')) {
         companionReply = "Sleep is often the first thing we sacrifice under competitive exam pressure, yet it is the foundation of cognitive functioning. Try setting a hard 'digital sunset' tonight. Can you commit to resting 7 hours today?";
       } else if (lowerMsg.includes('mock') || lowerMsg.includes('marks') || lowerMsg.includes('score') || lowerMsg.includes('percentile') || lowerMsg.includes('rank')) {

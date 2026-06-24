@@ -244,6 +244,22 @@ def test_chat_companion_fallback_states(monkeypatch):
     reply = engine.chat_companion_with_gemini("nothing, I idk", history_control, "JEE")
     assert "three deep breaths" in reply
 
+    # 11. Routine corrections - sleeping at 12 AM
+    reply = engine.chat_companion_with_gemini("I sleep at 12 AM every night", [], "JEE")
+    assert "REM cycles" in reply or "9-10 PM" in reply
+    
+    # 12. Routine corrections - skipping meals
+    reply = engine.chat_companion_with_gemini("I skip breakfast to save time", [], "JEE")
+    assert "glucose" in reply or "Never skip meals" in reply
+    
+    # 13. Routine corrections - studying straight
+    reply = engine.chat_companion_with_gemini("I study straight for 6 hours", [], "JEE")
+    assert "Pomodoro" in reply or "cognitive saturation" in reply
+    
+    # 14. Routine corrections - studying in bed
+    reply = engine.chat_companion_with_gemini("I like studying on bed lying down", [], "JEE")
+    assert "signals to your brain" in reply or "study desk" in reply
+
 
 def test_empty_payload_rejection():
     """
