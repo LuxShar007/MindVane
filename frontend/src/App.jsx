@@ -177,6 +177,10 @@ function App() {
   const [rawBacklog, setRawBacklog] = useState('');
   const [declutterResult, setDeclutterResult] = useState(null);
   const [isLoadingDeclutter, setIsLoadingDeclutter] = useState(false);
+  const [completedSteps, setCompletedSteps] = useState({});
+  const handleToggleStep = (idx) => {
+    setCompletedSteps(prev => ({ ...prev, [idx]: !prev[idx] }));
+  };
   /** @type {[string, function(string): void]} Routing state: 'welcome' | 'launcher' | 'analyzer' | 'chat' | 'declutter' */
   const [view, setView] = useState('welcome');
   
@@ -420,6 +424,7 @@ function App() {
 
     setIsLoadingDeclutter(true);
     setFeedbackMsg('');
+    setCompletedSteps({}); // Reset progress tracker for new session
     const base = getBaseUrl();
 
     try {
@@ -519,13 +524,91 @@ function App() {
       let companionReply = "";
       const lowerMsg = userMessageText.toLowerCase();
 
-      if (lowerMsg.includes('suicide') || lowerMsg.includes('kill myself') || lowerMsg.includes('die')) {
+      // Find the last assistant message in history to maintain context
+      const lastAssistantMsg = [...chatHistory].reverse().find(msg => msg.role === 'assistant')?.content || "";
+      const lastAssistantMsgLower = lastAssistantMsg.toLowerCase();
+
+      // Common helper definitions for checking user response types
+      const isYes = ['yes', 'yeah', 'yep', 'sure', 'ok', 'will do', 'i can', 'try', 'definitely', 'agree'].some(word => lowerMsg.includes(word));
+      const isNo = ['no', 'cannot', "can't", 'hard', 'difficult', 'impossible', 'busy', 'not now', 'nah'].some(word => lowerMsg.includes(word));
+
+      // 1. Basic greeting / parting / gratitude handling
+      if (['hello', 'hi ', 'hi!', 'hey ', 'hey!', 'greetings', 'who are you', 'what can you do'].some(word => lowerMsg.startsWith(word) || lowerMsg === 'hi')) {
+        companionReply = "Hello! I am your MindVane Companion. I'm here to support you with exam stress, study backlogs, or sleep fatigue. How are you feeling right now?";
+      } else if (['thank you', 'thanks', 'tanks', 'ty'].some(word => lowerMsg.includes(word))) {
+        companionReply = "You're very welcome! Remember to take things one step at a time. I'm always here if you need to talk.";
+      } else if (['bye', 'goodbye', 'see you'].some(word => lowerMsg.includes(word))) {
+        companionReply = "Goodbye! Take care of yourself, and don't forget to take a break when you need it.";
+      }
+      // 2. High-risk crisis handling
+      else if (lowerMsg.includes('suicide') || lowerMsg.includes('kill myself') || lowerMsg.includes('end my life') || lowerMsg.includes('want to die') || lowerMsg.includes('die')) {
         companionReply = "I am deeply concerned to hear that. Your safety is absolute priority. Please reach out to KIRAN at 1800-599-0019 or Tele-MANAS at 14416 immediately. There are professionals ready to walk with you through this pain.";
-      } else if (lowerMsg.includes('sleep') || lowerMsg.includes('tired') || lowerMsg.includes('exhausted')) {
+      }
+      // 3. State-aware check: Sleep commitment follow-up
+      else if (lastAssistantMsgLower.includes('resting 7 hours today?')) {
+        if (isYes) {
+          companionReply = "That is a great choice! Your brain will process and store information much better after a solid rest. What time are you planning to sleep tonight?";
+        } else if (isNo) {
+          companionReply = "I completely understand. When exam prep is intense, sleep feels like lost time. Could you try even 6 hours, or maybe a quick 20-minute nap during the day?";
+        } else {
+          companionReply = "Got it. Remember, sleep isn't a reward for studying; it's a requirement. Try to prioritize at least a little rest tonight. What is another worry on your mind?";
+        }
+      }
+      // 4. State-aware check: Sleep time planning follow-up
+      else if (lastAssistantMsgLower.includes('planning to sleep tonight?')) {
+        companionReply = "Got it. Try to turn off your phone and computer screens 15 minutes before that time to let your brain settle. Sleep well when you do!";
+      }
+      // 5. State-aware check: Control schedule follow-up
+      else if (lastAssistantMsgLower.includes('what is one small thing you can control')) {
+        const isStudyOrTask = ['study', 'revision', 'math', 'physics', 'chemistry', 'biology', 'chapter', 'mock', 'test', 'syllabus', 'backlog', 'read', 'solve'].some(word => lowerMsg.includes(word));
+        const isRelaxOrCare = ['sleep', 'sleeping', 'nap', 'walk', 'music', 'break', 'eat', 'exercise', 'relax', 'meditate', 'rest'].some(word => lowerMsg.includes(word));
+        const isIdk = ["don't know", 'not sure', 'none', 'idk', 'nothing'].some(word => lowerMsg.includes(word));
+
+        if (isStudyOrTask) {
+          companionReply = "Focusing on that is a great starting point. Try breaking it down into a single 25-minute Pomodoro session today. How does that sound?";
+        } else if (isRelaxOrCare) {
+          companionReply = "Choosing to prioritize your well-being is highly productive. Taking even a short break helps clear cognitive overload. Enjoy your rest!";
+        } else if (isIdk) {
+          companionReply = "That's okay. When overwhelmed, even choosing to take three deep breaths right now is a small thing you can control. Let's do that together.";
+        } else {
+          companionReply = "That sounds like a manageable step. Take it slow, and focus only on this single task for now. You've got this.";
+        }
+      }
+      // 6. State-aware check: Mock test follow-up
+      else if (lastAssistantMsgLower.includes('diagnostic logs')) {
+        if (isYes || lowerMsg.includes('plan') || lowerMsg.includes('how') || lowerMsg.includes('help')) {
+          companionReply = "Excellent. First, pick just one mock test paper. Find two questions you got wrong due to simple calculation errors, and correct them. That's your only goal for now. Does that feel doable?";
+        } else if (isNo || lowerMsg.includes('hard') || lowerMsg.includes('sad') || lowerMsg.includes('stress')) {
+          companionReply = "It is incredibly frustrating when effort doesn't translate to scores immediately. But learning is non-linear. Give yourself some grace today.";
+        } else {
+          companionReply = "Analyzing mistakes is tough but it is the fastest way to improve. Let me know if you want to break down specific study topics.";
+        }
+      }
+      // 7. State-aware check: Doable question follow-up
+      else if (lastAssistantMsgLower.includes('does that feel doable?')) {
+        if (isYes) {
+          companionReply = "Fantastic! Go ahead and tackle those two errors. Take it one step at a time.";
+        } else {
+          companionReply = "No worries. If that feels like too much, just closing the mock test and taking a break is a perfectly fine choice today.";
+        }
+      }
+      // 8. State-aware check: Fear of failure follow-up
+      else if (lastAssistantMsgLower.includes('decouple your identity')) {
+        const isSocialWorry = ['parent', 'family', 'future', 'fail', 'career', 'job', 'expect'].some(word => lowerMsg.includes(word));
+        if (isSocialWorry) {
+          companionReply = "Those worries are very real and heavy to carry. But remember, your family and future self will care more about your health and resilience than a single rank.";
+        } else if (isYes || ['thanks', 'thank you', 'ok', 'true', 'agree'].some(word => lowerMsg.includes(word))) {
+          companionReply = "I'm glad that resonates with you. You are doing your best, and that is more than enough. How are you feeling now?";
+        } else {
+          companionReply = "It's a journey to decouple our worth from test scores. Keep reminding yourself that you are worthy regardless of the outcome. What else is on your mind?";
+        }
+      }
+      // 9. Standard keyword matching if no active follow-up context
+      else if (lowerMsg.includes('sleep') || lowerMsg.includes('tired') || lowerMsg.includes('exhausted') || lowerMsg.includes('insomnia') || lowerMsg.includes('fatigue')) {
         companionReply = "Sleep is often the first thing we sacrifice under competitive exam pressure, yet it is the foundation of cognitive functioning. Try setting a hard 'digital sunset' tonight. Can you commit to resting 7 hours today?";
-      } else if (lowerMsg.includes('mock') || lowerMsg.includes('marks') || lowerMsg.includes('score')) {
+      } else if (lowerMsg.includes('mock') || lowerMsg.includes('marks') || lowerMsg.includes('score') || lowerMsg.includes('percentile') || lowerMsg.includes('rank')) {
         companionReply = "Mock scores can feel like a direct verdict on your future, but they are actually diagnostic logs. They show you where to align your efforts, not how smart you are. Let's make a plan to check your mistakes calmly.";
-      } else if (lowerMsg.includes('fail') || lowerMsg.includes('fear') || lowerMsg.includes('scared')) {
+      } else if (lowerMsg.includes('fail') || lowerMsg.includes('fear') || lowerMsg.includes('scared') || lowerMsg.includes('anxious') || lowerMsg.includes('worry')) {
         companionReply = "The fear of failure in examinations like " + exam + " is incredibly high due to social pressures. Try to decouple your identity from the outcome. You are a valuable person regardless of what sheet is printed on result day.";
       } else {
         companionReply = "I hear you. The preparation journey for " + exam + " is grueling, and feeling this weight is part of the challenge. Tell me, what is one small thing you can control in your schedule right now to make you feel slightly more at peace?";
@@ -1176,6 +1259,28 @@ function App() {
               <div ref={chatEndRef} />
             </div>
 
+            {/* Chat Suggestion Chips */}
+            <div className="px-4 py-2 border-t border-zinc-150 dark:border-zinc-800 bg-zinc-55/30 dark:bg-[#151515]/30 flex flex-wrap gap-2 items-center select-none">
+              <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Suggested:</span>
+              {[
+                { label: "Trouble sleeping 🥱", text: "I am having trouble sleeping lately." },
+                { label: "Low mock score stress 🩺", text: "I am really stressed about my low mock exam scores." },
+                { label: "Backlog overwhelm 📚", text: "I have a huge backlog and I don't know where to start." },
+                { label: "Fear of failure 😰", text: "I'm feeling scared that I might fail my exam." }
+              ].map((chip, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setChatInput(chip.text);
+                  }}
+                  className="px-2.5 py-1 text-[11px] rounded-full bg-zinc-100 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 text-zinc-650 dark:text-zinc-400 hover:bg-accentMagenta/10 hover:border-accentMagenta/40 hover:text-accentMagenta transition-all duration-200 select-none cursor-pointer"
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+
             {/* Chat Form */}
             <form onSubmit={sendMessage} className="p-4 border-t border-zinc-200 dark:border-zinc-800/80 bg-zinc-50 dark:bg-[#151515]/60 flex items-center space-x-2 transition-colors duration-300">
               <div className="flex-1 relative">
@@ -1286,26 +1391,79 @@ function App() {
               </div>
 
               <div className="bg-white dark:bg-[#121212] border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-lg space-y-4">
-                <span className="text-xs uppercase tracking-wider text-zinc-500 font-bold block">Microscopic Study Framework Tasks</span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-100 dark:border-zinc-800/80 pb-3">
+                  <div>
+                    <span className="text-xs uppercase tracking-wider text-zinc-500 font-bold block">Microscopic Study Framework Tasks</span>
+                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 block">Clear tasks sequentially to complete your session</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-accentMagenta to-accentPurple">
+                      {Math.round((Object.values(completedSteps).filter(Boolean).length / declutterResult.atomic_steps.length) * 100)}% Cleared
+                    </span>
+                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 block">
+                      ({Object.values(completedSteps).filter(Boolean).length} of {declutterResult.atomic_steps.length} tasks)
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="w-full h-2 bg-zinc-100 dark:bg-zinc-800/60 rounded-full overflow-hidden border border-zinc-200/20">
+                  <div 
+                    className="h-full bg-gradient-to-r from-accentMagenta to-accentPurple transition-all duration-500 ease-out shadow-[0_0_8px_rgba(236,72,153,0.3)]"
+                    style={{ width: `${Math.round((Object.values(completedSteps).filter(Boolean).length / declutterResult.atomic_steps.length) * 100)}%` }}
+                  ></div>
+                </div>
+
+                {/* Celebratory Banner when 100% complete */}
+                {Object.values(completedSteps).filter(Boolean).length === declutterResult.atomic_steps.length && (
+                  <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 rounded-xl p-4 text-center animate-pulse shadow-md">
+                    <span className="text-sm font-bold text-emerald-500 dark:text-emerald-400 block">
+                      🎉 Backlog De-cluttered Successfully!
+                    </span>
+                    <span className="text-xs text-zinc-600 dark:text-zinc-400 font-light block mt-1">
+                      You cleared all tasks for this session. Take a well-deserved break!
+                    </span>
+                  </div>
+                )}
+
                 <div className="space-y-3">
-                  {declutterResult.atomic_steps.map((step, idx) => (
-                    <div key={idx} className="flex flex-col md:flex-row md:items-center justify-between bg-zinc-50 dark:bg-black/30 border border-zinc-100 dark:border-zinc-800/40 rounded-xl px-4 py-3 gap-3">
-                      <div className="flex items-center space-x-3">
-                        <span className="w-5 h-5 flex items-center justify-center rounded-full bg-accentMagenta/15 text-accentMagenta text-[10px] font-bold">
-                          {idx + 1}
-                        </span>
-                        <span className="text-xs text-zinc-700 dark:text-zinc-300 font-medium">{step.task_name}</span>
+                  {declutterResult.atomic_steps.map((step, idx) => {
+                    const isDone = !!completedSteps[idx];
+                    return (
+                      <div 
+                        key={idx} 
+                        onClick={() => handleToggleStep(idx)}
+                        className={`flex flex-col md:flex-row md:items-center justify-between border rounded-xl px-4 py-3 gap-3 cursor-pointer select-none transition-all duration-300 ${
+                          isDone 
+                            ? 'bg-zinc-150/40 dark:bg-zinc-900/10 border-zinc-200 dark:border-zinc-800/60 opacity-60' 
+                            : 'bg-zinc-50 dark:bg-black/30 border-zinc-100 dark:border-zinc-800/40 hover:border-accentMagenta/30 hover:shadow-sm'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3 flex-1">
+                          <div className={`w-5 h-5 flex items-center justify-center rounded-full border transition-all duration-305 font-bold text-[10px] ${
+                            isDone 
+                              ? 'bg-emerald-500 border-emerald-500 text-white' 
+                              : 'bg-zinc-100 dark:bg-zinc-900 border-zinc-305 dark:border-zinc-700 text-zinc-500'
+                          }`}>
+                            {isDone ? '✓' : idx + 1}
+                          </div>
+                          <span className={`text-xs font-medium transition-all duration-300 ${
+                            isDone ? 'line-through text-zinc-400 dark:text-zinc-650' : 'text-zinc-700 dark:text-zinc-300'
+                          }`}>
+                            {step.task_name}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 self-end md:self-auto">
+                          <span className="text-[10px] bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-300 dark:border-zinc-700 px-2 py-0.5 rounded-full font-mono font-bold">
+                            ⏱️ {step.estimated_minutes} Min
+                          </span>
+                          <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${getImpactBadgeColor(step.priority)}`}>
+                            {step.priority}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-300 dark:border-zinc-700 px-2 py-0.5 rounded-full font-mono font-bold">
-                          ⏱️ {step.estimated_minutes} Min
-                        </span>
-                        <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${getImpactBadgeColor(step.priority)}`}>
-                          {step.priority}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>

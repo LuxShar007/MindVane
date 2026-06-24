@@ -300,14 +300,103 @@ def chat_companion_with_gemini(message: str, history_list: List[Any], exam: str)
         # Simulated chat companion fallback
         lower_msg = message.lower()
         exam_name = "Board Exams" if exam in ["CBSE_12TH", "STATE_BOARDS"] else exam
-        if "sleep" in lower_msg or "tired" in lower_msg or "exhausted" in lower_msg:
-            return "Sleep is often the first thing we sacrifice under intensive preparation pressure. Try setting a hard digital sunset tonight. Can you commit to resting 7 hours?"
-        elif "mock" in lower_msg or "marks" in lower_msg or "score" in lower_msg:
+        
+        # Find the last assistant message in history to maintain context
+        last_assistant_msg = ""
+        if history_list:
+            for h in reversed(history_list):
+                # history_list elements might be pydantic objects or dicts
+                role = h.role if hasattr(h, 'role') else h.get('role', 'user')
+                content = h.content if hasattr(h, 'content') else h.get('content', '')
+                if role in ['assistant', 'model']:
+                    last_assistant_msg = content
+                    break
+        
+        last_assistant_msg_lower = last_assistant_msg.lower()
+        
+        # Common helper definitions for checking user response types
+        yes_keywords = ['yes', 'yeah', 'yep', 'sure', 'ok', 'will do', 'i can', 'try', 'definitely', 'agree']
+        no_keywords = ['no', 'cannot', "can't", 'hard', 'difficult', 'impossible', 'busy', 'not now', 'nah']
+        
+        is_yes = any(word in lower_msg for word in yes_keywords)
+        is_no = any(word in lower_msg for word in no_keywords)
+        
+        # 1. Basic greeting / parting / gratitude handling
+        greetings = ['hello', 'hi ', 'hi!', 'hey ', 'hey!', 'greetings', 'who are you', 'what can you do']
+        if any(lower_msg.startswith(g) for g in greetings) or lower_msg == 'hi':
+            return "Hello! I am your MindVane Companion. I'm here to support you with exam stress, study backlogs, or sleep fatigue. How are you feeling right now?"
+        elif any(word in lower_msg for word in ['thank you', 'thanks', 'tanks', 'ty']):
+            return "You're very welcome! Remember to take things one step at a time. I'm always here if you need to talk."
+        elif any(word in lower_msg for word in ['bye', 'goodbye', 'see you']):
+            return "Goodbye! Take care of yourself, and don't forget to take a break when you need it."
+            
+        # 2. High-risk crisis handling
+        elif any(word in lower_msg for word in ['suicide', 'kill myself', 'end my life', 'want to die', 'die']):
+            return "I am deeply concerned to hear that. Your safety is absolute priority. Please reach out to KIRAN at 1800-599-0019 or Tele-MANAS at 14416 immediately. There are professionals ready to walk with you through this pain."
+            
+        # 3. State-aware check: Sleep commitment follow-up
+        elif 'resting 7 hours' in last_assistant_msg_lower:
+            if is_yes:
+                return "That is a great choice! Your brain will process and store information much better after a solid rest. What time are you planning to sleep tonight?"
+            elif is_no:
+                return "I completely understand. When exam prep is intense, sleep feels like lost time. Could you try even 6 hours, or maybe a quick 20-minute nap during the day?"
+            else:
+                return "Got it. Remember, sleep isn't a reward for studying; it's a requirement. Try to prioritize at least a little rest tonight. What is another worry on your mind?"
+                
+        # 4. State-aware check: Sleep time planning follow-up
+        elif 'planning to sleep tonight?' in last_assistant_msg_lower:
+            return "Got it. Try to turn off your phone and computer screens 15 minutes before that time to let your brain settle. Sleep well when you do!"
+            
+        # 5. State-aware check: Control schedule follow-up
+        elif 'what is one small thing you can control' in last_assistant_msg_lower or 'one small thing you can control' in last_assistant_msg_lower:
+            is_study_or_task = any(word in lower_msg for word in ['study', 'revision', 'math', 'physics', 'chemistry', 'biology', 'chapter', 'mock', 'test', 'syllabus', 'backlog', 'read', 'solve'])
+            is_relax_or_care = any(word in lower_msg for word in ['sleep', 'sleeping', 'nap', 'walk', 'music', 'break', 'eat', 'exercise', 'relax', 'meditate', 'rest'])
+            is_idk = any(word in lower_msg for word in ["don't know", 'not sure', 'none', 'idk', 'nothing'])
+            
+            if is_study_or_task:
+                return "Focusing on that is a great starting point. Try breaking it down into a single 25-minute Pomodoro session today. How does that sound?"
+            elif is_relax_or_care:
+                return "Choosing to prioritize your well-being is highly productive. Taking even a short break helps clear cognitive overload. Enjoy your rest!"
+            elif is_idk:
+                return "That's okay. When overwhelmed, even choosing to take three deep breaths right now is a small thing you can control. Let's do that together."
+            else:
+                return "That sounds like a manageable step. Take it slow, and focus only on this single task for now. You've got this."
+                
+        # 6. State-aware check: Mock test follow-up
+        elif 'diagnostic logs' in last_assistant_msg_lower:
+            if is_yes or 'plan' in lower_msg or 'how' in lower_msg or 'help' in lower_msg:
+                return "Excellent. First, pick just one mock test paper. Find two questions you got wrong due to simple calculation errors, and correct them. That's your only goal for now. Does that feel doable?"
+            elif is_no or any(word in lower_msg for word in ['hard', 'sad', 'stress']):
+                return "It is incredibly frustrating when effort doesn't translate to scores immediately. But learning is non-linear. Give yourself some grace today."
+            else:
+                return "Analyzing mistakes is tough but it is the fastest way to improve. Let me know if you want to break down specific study topics."
+                
+        # 7. State-aware check: Doable question follow-up
+        elif 'does that feel doable?' in last_assistant_msg_lower:
+            if is_yes:
+                return "Fantastic! Go ahead and tackle those two errors. Take it one step at a time."
+            else:
+                return "No worries. If that feels like too much, just closing the mock test and taking a break is a perfectly fine choice today."
+                
+        # 8. State-aware check: Fear of failure follow-up
+        elif 'decouple your identity' in last_assistant_msg_lower:
+            is_social_worry = any(word in lower_msg for word in ['parent', 'family', 'future', 'fail', 'career', 'job', 'expect'])
+            if is_social_worry:
+                return "Those worries are very real and heavy to carry. But remember, your family and future self will care more about your health and resilience than a single rank."
+            elif is_yes or any(word in lower_msg for word in ['thanks', 'thank you', 'ok', 'true', 'agree']):
+                return "I'm glad that resonates with you. You are doing your best, and that is more than enough. How are you feeling now?"
+            else:
+                return "It's a journey to decouple our worth from test scores. Keep reminding yourself that you are worthy regardless of the outcome. What else is on your mind?"
+                
+        # 9. Standard keyword matching if no active follow-up context
+        elif "sleep" in lower_msg or "tired" in lower_msg or "exhausted" in lower_msg or "insomnia" in lower_msg or "fatigue" in lower_msg:
+            return "Sleep is often the first thing we sacrifice under intensive preparation pressure. Try setting a hard digital sunset tonight. Can you commit to resting 7 hours today?"
+        elif "mock" in lower_msg or "marks" in lower_msg or "score" in lower_msg or "percentile" in lower_msg or "rank" in lower_msg:
             return f"Practice scores are diagnostic logs showing where to align your efforts for {exam_name}, not a rating of your intelligence."
-        elif "fail" in lower_msg or "fear" in lower_msg or "scared" in lower_msg:
-            return f"The fear of failure in examinations like {exam_name} is normal due to expectations. Try to decouple your identity from the test results."
+        elif "fail" in lower_msg or "fear" in lower_msg or "scared" in lower_msg or "anxious" in lower_msg or "worry" in lower_msg:
+            return f"The fear of failure in examinations like {exam_name} is normal due to expectations. Try to decouple your identity from the results."
         else:
-            return f"I hear you. The preparation journey for {exam_name} takes massive energy. What is one small thing you can control right now?"
+            return f"I hear you. The preparation journey for {exam_name} takes massive energy. What is one small thing you can control in your schedule right now to make you feel slightly more at peace?"
 
     try:
         contents = []

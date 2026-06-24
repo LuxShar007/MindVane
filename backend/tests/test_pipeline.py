@@ -183,6 +183,68 @@ def test_chat_companion():
     assert len(data["reply"]) > 0
 
 
+def test_chat_companion_fallback_states(monkeypatch):
+    """
+    Test the chatbot companion state machine / simulated fallback responses.
+    Specifically tests greeting, parting, and state-aware followups (sleep, mock, fear, control).
+    """
+    # Force get_genai_client to return None to test the simulation fallback logic
+    from app import engine
+    monkeypatch.setattr(engine, "get_genai_client", lambda: None)
+    
+    # 1. Greeting
+    reply = engine.chat_companion_with_gemini("hi there", [], "JEE")
+    assert "MindVane Companion" in reply or "support" in reply
+    
+    # 2. Parting
+    reply = engine.chat_companion_with_gemini("goodbye", [], "JEE")
+    assert "Goodbye" in reply or "Take care" in reply
+    
+    # 3. Gratitude
+    reply = engine.chat_companion_with_gemini("thank you so much", [], "JEE")
+    assert "welcome" in reply or "here if you need to talk" in reply
+    
+    # 4. Crisis handling
+    reply = engine.chat_companion_with_gemini("i want to die", [], "JEE")
+    assert "KIRAN" in reply or "Tele-MANAS" in reply
+    
+    # 5. Sleep commit yes
+    history = [
+        {"role": "user", "content": "I am so tired"},
+        {"role": "assistant", "content": "Can you commit to resting 7 hours today?"}
+    ]
+    reply = engine.chat_companion_with_gemini("yes, I can", history, "JEE")
+    assert "great choice" in reply or "planning to sleep" in reply
+    
+    # 6. Sleep commit no
+    reply = engine.chat_companion_with_gemini("no, too busy", history, "JEE")
+    assert "completely understand" in reply or "even 6 hours" in reply
+    
+    # 7. Sleep planning
+    history_planning = [
+        {"role": "user", "content": "yes"},
+        {"role": "assistant", "content": "What time are you planning to sleep tonight?"}
+    ]
+    reply = engine.chat_companion_with_gemini("around 11 PM", history_planning, "JEE")
+    assert "turn off your phone" in reply
+    
+    # 8. Control schedule - study topic
+    history_control = [
+        {"role": "user", "content": "stressed"},
+        {"role": "assistant", "content": "what is one small thing you can control in your schedule?"}
+    ]
+    reply = engine.chat_companion_with_gemini("I need to revise physics", history_control, "JEE")
+    assert "Pomodoro" in reply or "starting point" in reply
+    
+    # 9. Control schedule - relaxation
+    reply = engine.chat_companion_with_gemini("I will take a walk", history_control, "JEE")
+    assert "prioritize your well-being" in reply or "short break" in reply
+    
+    # 10. Control schedule - idk/nothing
+    reply = engine.chat_companion_with_gemini("nothing, I idk", history_control, "JEE")
+    assert "three deep breaths" in reply
+
+
 def test_empty_payload_rejection():
     """
     Test input validation failure handling (HTTP 400).
